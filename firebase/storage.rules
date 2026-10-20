@@ -1,0 +1,22 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Materials: staff upload/read within their institution; students read only.
+    match /materials/{institutionId}/{materialId}/{fileName} {
+      allow read: if auth != null &&
+        root.child('users').child(auth.uid).child('institutionId').val() == institutionId;
+      allow write: if auth != null &&
+        (root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' ||
+         root.child('users').child(auth.uid).child('role').val() == 'teacher') &&
+        root.child('users').child(auth.uid).child('institutionId').val() == institutionId &&
+        request.resource.size <= 10 * 1024 * 1024 &&
+        request.resource.contentType in [
+          'application/pdf',
+          'image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp',
+          'text/plain',
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        ];
+    }
+  }
+}

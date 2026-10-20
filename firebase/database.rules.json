@@ -1,0 +1,73 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "users": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid == $uid || root.child('users').child(auth.uid).child('role').val() == 'platformOwner' || (root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' && data.child('institutionId').val() == root.child('users').child(auth.uid).child('institutionId').val()))",
+        ".write": "auth != null && (auth.uid == $uid && !data.exists() || root.child('users').child(auth.uid).child('role').val() == 'platformOwner')"
+      }
+    },
+    "institutions": {
+      "$institutionId": {
+        ".read": "auth != null && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId",
+        ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() == 'platformOwner'"
+      }
+    },
+    "attendance": {
+      "$classId": {
+        ".read": "auth != null && root.child('users').child(auth.uid).child('institutionId').val() == $classId",
+        "$date": {
+          ".read": "auth != null",
+          "$studentUid": {
+            ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' || root.child('users').child(auth.uid).child('role').val() == 'teacher')"
+          }
+        }
+      }
+    },
+    "tests": {
+      "$institutionId": {
+        ".read": "auth != null && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId",
+        "$testId": {
+          ".read": "auth != null",
+          "_questions": {
+            ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' || root.child('users').child(auth.uid).child('role').val() == 'teacher')"
+          },
+          "_attempts": {
+            "$studentUid": {
+              ".write": "auth != null && auth.uid == $studentUid"
+            }
+          },
+          "_results": {
+            "$studentUid": {
+              ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' || root.child('users').child(auth.uid).child('role').val() == 'teacher')"
+            }
+          }
+        }
+      }
+    },
+    "materials": {
+      "$institutionId": {
+        ".read": "auth != null && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId",
+        "$materialId": {
+          ".read": "auth != null",
+          ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' || root.child('users').child(auth.uid).child('role').val() == 'teacher')"
+        }
+      }
+    },
+    "pendingAccounts": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' && root.child('users').child(auth.uid).child('institutionId').val() !== null",
+      "$code": {
+        ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' && data.child('institutionId').val() == root.child('users').child(auth.uid).child('institutionId').val()",
+        ".write": "auth != null && ((!data.exists() && root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' && root.child('users').child(auth.uid).child('institutionId').val() !== null && root.child('institutions').child(root.child('users').child(auth.uid).child('institutionId').val()).child('status').val() == 'active' && newData.child('code').val() === $code && newData.child('email').isString() && newData.child('email').val() != '' && newData.child('displayName').isString() && newData.child('displayName').val() != '' && (newData.child('role').val() == 'student' || newData.child('role').val() == 'teacher') && newData.child('institutionId').val() == root.child('users').child(auth.uid).child('institutionId').val() && (newData.child('classId').val() === null || newData.child('classId').isString()) && newData.child('status').val() == 'unused' && newData.child('usedBy').val() === null && newData.child('createdBy').val() == auth.uid && newData.child('createdAt').isNumber()) || (data.exists() && data.child('status').val() == 'unused' && newData.child('status').val() == 'used' && newData.child('usedBy').isString() && newData.child('usedBy').val() == auth.uid && newData.child('code').val() === $code && newData.child('email').val() === data.child('email').val() && newData.child('displayName').val() === data.child('displayName').val() && newData.child('role').val() === data.child('role').val() && newData.child('institutionId').val() === data.child('institutionId').val() && newData.child('classId').val() === data.child('classId').val() && newData.child('createdBy').val() === data.child('createdBy').val() && newData.child('createdAt').val() === data.child('createdAt').val()))"
+      }
+    },
+    "institutionRequests": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() == 'platformOwner'",
+      "$requestId": {
+        ".read": "auth != null && auth.uid == $requestId",
+        ".write": "auth != null && ((auth.uid == $requestId && root.child('users').child(auth.uid).child('role').val() == 'pending' && newData.child('requesterUid').val() == $requestId && newData.child('requesterName').val() == root.child('users').child(auth.uid).child('displayName').val() && newData.child('status').val() == 'pending' && newData.child('reviewedBy').val() === null && newData.child('reviewedAt').val() === null && newData.child('institutionName').isString() && newData.child('institutionName').val() != '' && newData.child('contactEmail').isString() && newData.child('phone').isString() && newData.child('address').isString() && newData.child('createdAt').isNumber() && (!data.exists() || data.child('status').val() == 'rejected')) || (root.child('users').child(auth.uid).child('role').val() == 'platformOwner' && data.exists() && data.child('status').val() == 'pending' && (newData.child('status').val() == 'approved' || newData.child('status').val() == 'rejected') && newData.child('reviewedBy').val() == auth.uid && newData.child('requesterUid').val() == data.child('requesterUid').val() && newData.child('institutionName').val() == data.child('institutionName').val()))"
+      }
+    }
+  }
+}

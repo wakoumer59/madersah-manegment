@@ -1,0 +1,23 @@
+@import 'tailwindcss';
+
+/* Design tokens — CSS-first Tailwind v4 configuration.
+   System font stack: no web-font download, fast on low-end phones. */
+@theme {
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  @apply bg-slate-50 font-sans text-slate-900 antialiased;
+}
+
+/* Consistent focus visibility for keyboard users */
+:focus-visible {
+  outline: 2px solid var(--color-orange-600);
+  outline-offset: 2px;
+}
