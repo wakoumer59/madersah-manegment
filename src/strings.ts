@@ -1,7 +1,6 @@
-// Centralized English UI strings. Keeping every user-facing string here makes
-// future localization (Amharic / Afan Oromo) a matter of adding a dictionary —
-// no i18n library needed for v1.
-export const strings = {
+import { translate } from '@/i18n';
+
+const englishStrings = {
   appName: 'Medresa LMS',
   tagline: 'Multi-Madrasah Learning Platform',
   nav: {
@@ -71,3 +70,17 @@ export const strings = {
     pending: 'Pending account',
   },
 } as const;
+
+function localize<T>(value: T): T {
+  if (!value || typeof value !== 'object') {
+    return (typeof value === 'string' ? translate(value) : value) as T;
+  }
+  return new Proxy(value, {
+    get(target, property, receiver) {
+      const child: unknown = Reflect.get(target, property, receiver);
+      return typeof child === 'string' ? translate(child) : localize(child);
+    },
+  });
+}
+
+export const strings = localize(englishStrings);

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { GraduationCap } from 'lucide-react';
+import { LanguageSelector } from '@/i18n';
 import { strings } from '@/strings';
 
 /** Centered card layout shared by all public auth pages. */
@@ -17,6 +18,9 @@ export function AuthLayout({
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 py-8">
       <div className="w-full max-w-md">
+        <div className="mb-3 flex justify-end">
+          <LanguageSelector />
+        </div>
         <div className="mb-6 flex flex-col items-center text-center">
           <span
             aria-hidden="true"
