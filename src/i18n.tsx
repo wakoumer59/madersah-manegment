@@ -1,4 +1,5 @@
 import { createContext, Fragment, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { Languages } from 'lucide-react';
 
 export type Language = 'en' | 'am' | 'om';
 
@@ -856,22 +857,51 @@ export function LanguageBoundary({ children }: { children: ReactNode }) {
 
 export function LanguageSelector() {
   const { language, setLanguage } = useLanguage();
+  const [isOpen, setIsOpen] = useState(false);
+  const options: { value: Language; label: string }[] = [
+    { value: 'en', label: 'English' },
+    { value: 'am', label: 'አማርኛ' },
+    { value: 'om', label: 'Afaan Oromoo' },
+  ];
+
   return (
-    <label className="inline-flex items-center gap-2 text-sm text-slate-600">
-      <span className="sr-only">{translate('Language')}</span>
-      <select
+    <div className="relative">
+      <button
+        type="button"
         aria-label={translate('Language')}
-        value={language}
-        onChange={(event) => {
-          const value = event.target.value;
-          if (value === 'en' || value === 'am' || value === 'om') setLanguage(value);
-        }}
-        className="min-h-[38px] rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-700 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/30"
+        aria-expanded={isOpen}
+        aria-controls="language-options"
+        title={translate('Language')}
+        onClick={() => setIsOpen((open) => !open)}
+        className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/30"
       >
-        <option value="en">English</option>
-        <option value="am">አማርኛ</option>
-        <option value="om">Afaan Oromoo</option>
-      </select>
-    </label>
+        <Languages className="h-5 w-5" aria-hidden="true" />
+      </button>
+      {isOpen && (
+        <div
+          id="language-options"
+          role="group"
+          aria-label={translate('Language')}
+          className="absolute right-0 top-full z-50 mt-2 min-w-40 rounded-lg border border-slate-200 bg-white p-1 shadow-lg"
+        >
+          {options.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              aria-current={language === option.value ? 'true' : undefined}
+              onClick={() => {
+                setLanguage(option.value);
+                setIsOpen(false);
+              }}
+              className={`block w-full rounded-md px-3 py-2 text-left text-sm hover:bg-slate-100 ${
+                language === option.value ? 'font-semibold text-orange-700' : 'text-slate-700'
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
