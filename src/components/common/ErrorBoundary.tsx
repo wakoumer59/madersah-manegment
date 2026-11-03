@@ -1,3 +1,4 @@
+import { translate  } from '@/i18n';
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { strings } from '@/strings';
 
@@ -35,8 +36,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         <div className="w-full max-w-md rounded-xl border border-red-200 bg-white p-6 text-center shadow-sm">
           <h1 className="text-lg font-semibold text-slate-900">{strings.errors.title}</h1>
           <p className="mt-2 text-sm text-slate-600">
-            An unexpected error occurred. Your data was not lost — reload the page to continue.
-          </p>
+            {translate("An unexpected error occurred. Your data was not lost — reload the page to continue.")}{' '}</p>
           <pre className="mt-4 overflow-auto rounded bg-slate-50 p-3 text-left text-xs text-slate-500">
             {this.state.error.message}
           </pre>

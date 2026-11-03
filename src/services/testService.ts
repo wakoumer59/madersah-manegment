@@ -1,14 +1,15 @@
 // Test service — /{institutionId}/tests/{testId}/
 //
 // Data layout:
-//   tests/$institutionId/$testId/          test metadata
-//   _questions/$questionId/                staff only — includes correct answer
+//   $institutionId/testCatalog/$testId/    student-readable test metadata
+//   $institutionId/tests/$testId/         staff-only test content and metadata
+//   _questions/$questionId/                staff only; students after results release
 //   _studentQuestions/$questionId/         student readable — NO correct answer
 //   _attempts/$studentUid/                 student writes own; staff reads all
 //   _results/$studentUid/                  staff writes; student reads if showResults
 import {
   child, get, limitToFirst, orderByChild, push, query, ref,
-  remove, serverTimestamp, set, startAfter, update,
+  serverTimestamp, set, startAfter, update,
 } from 'firebase/database';
 import { getDb } from '@/firebase/init';
 import type {
@@ -86,13 +87,17 @@ export async function createTest(input: {
 }): Promise<string> {
   const id = push(child(ref(getDb()), `${input.institutionId}/tests`)).key;
   if (!id) throw new Error('Could not generate a test id.');
-  await set(ref(getDb(), `${input.institutionId}/tests/${id}`), {
+  const test = {
     id, title: input.title.trim(), description: input.description.trim(),
     classId: input.classId, subjectId: input.subjectId,
     startTime: input.startTime, endTime: input.endTime,
     durationMin: input.durationMin, maxScore: input.maxScore,
     status: 'draft', showResults: false, questionCount: 0,
     createdBy: input.createdBy, createdAt: serverTimestamp(),
+  };
+  await update(ref(getDb()), {
+    [`${input.institutionId}/tests/${id}`]: test,
+    [`${input.institutionId}/testCatalog/${id}`]: test,
   });
   return id;
 }
@@ -102,19 +107,23 @@ export async function updateTest(input: {
   patch: Partial<Pick<Test, 'title' | 'description' | 'classId' | 'subjectId' |
     'startTime' | 'endTime' | 'durationMin' | 'maxScore' | 'status' | 'showResults'>>;
 }): Promise<void> {
-  await update(ref(getDb(), `${input.institutionId}/tests/${input.testId}`), {
-    ...input.patch,
+  await update(ref(getDb()), {
+    [`${input.institutionId}/tests/${input.testId}`]: input.patch,
+    [`${input.institutionId}/testCatalog/${input.testId}`]: input.patch,
   });
 }
 
 export async function deleteTest(institutionId: string, testId: string): Promise<void> {
-  await remove(ref(getDb(), `${institutionId}/tests/${testId}`));
+  await update(ref(getDb()), {
+    [`${institutionId}/tests/${testId}`]: null,
+    [`${institutionId}/testCatalog/${testId}`]: null,
+  });
 }
 
 export async function getTest(
   institutionId: string, testId: string,
 ): Promise<Test | null> {
-  const snapshot = await get(ref(getDb(), `${institutionId}/tests/${testId}`));
+  const snapshot = await get(ref(getDb(), `${institutionId}/testCatalog/${testId}`));
   if (!snapshot.exists()) return null;
   return toTest(testId, snapshot.val() as Record<string, unknown>);
 }
@@ -125,7 +134,7 @@ export async function listTestsPaged(
   pageSize = 20,
 ): Promise<{ items: Test[]; nextCursor: string | null }> {
   const base = query(
-    ref(getDb(), `${institutionId}/tests`),
+    ref(getDb(), `${institutionId}/testCatalog`),
     orderByChild('createdAt'), limitToFirst(pageSize + 1),
   );
   const snapshot = await get(cursor ? query(base, startAfter(cursor)) : base);
@@ -153,6 +162,15 @@ export async function createQuestion(input: {
   const { correct: _, ...studentQuestion } = question;
   await set(ref(getDb(), `${input.institutionId}/tests/${input.testId}/_studentQuestions/${id}`), studentQuestion);
   return id;
+}
+
+export async function deleteQuestion(
+  institutionId: string, testId: string, questionId: string,
+): Promise<void> {
+  await update(ref(getDb()), {
+    [`${institutionId}/tests/${testId}/_questions/${questionId}`]: null,
+    [`${institutionId}/tests/${testId}/_studentQuestions/${questionId}`]: null,
+  });
 }
 
 export async function getTestQuestions(

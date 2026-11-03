@@ -5,68 +5,113 @@
     "users": {
       "$uid": {
         ".read": "auth != null && (auth.uid == $uid || root.child('users').child(auth.uid).child('role').val() == 'platformOwner' || (root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' && data.child('institutionId').val() == root.child('users').child(auth.uid).child('institutionId').val()))",
-        ".write": "auth != null && (auth.uid == $uid && !data.exists() || root.child('users').child(auth.uid).child('role').val() == 'platformOwner')"
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'platformOwner' || (auth.uid == $uid && !data.exists() && newData.hasChildren(['uid', 'email', 'displayName', 'role', 'status', 'createdAt']) && newData.child('uid').val() == $uid && newData.child('email').val() == auth.token.email && newData.child('displayName').isString() && newData.child('role').val() == 'pending' && newData.child('status').val() == 'pending' && newData.child('institutionId').val() == null && newData.child('classId').val() == null && newData.child('createdAt').isNumber()) || (auth.uid == $uid && data.exists() && data.child('role').val() == 'pending' && data.child('status').val() == 'pending' && data.child('email').val() == auth.token.email && newData.child('email').val() == data.child('email').val() && newData.child('activationCode').isString() && root.child('pendingAccounts').child(newData.child('activationCode').val()).child('status').val() == 'unused' && root.child('pendingAccounts').child(newData.child('activationCode').val()).child('email').val() == auth.token.email && newData.child('role').val() == root.child('pendingAccounts').child(newData.child('activationCode').val()).child('role').val() && newData.child('status').val() == 'active' && newData.child('institutionId').val() == root.child('pendingAccounts').child(newData.child('activationCode').val()).child('institutionId').val() && newData.child('classId').val() == root.child('pendingAccounts').child(newData.child('activationCode').val()).child('classId').val() && newData.child('displayName').val() == root.child('pendingAccounts').child(newData.child('activationCode').val()).child('displayName').val()) || (root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' && data.exists() && data.child('institutionId').val() == root.child('users').child(auth.uid).child('institutionId').val() && root.child('institutions').child(data.child('institutionId').val()).child('status').val() == 'active' && ((!newData.exists() && data.child('role').val() != 'platformOwner' && data.child('role').val() != 'institutionAdmin') || (newData.exists() && newData.child('uid').val() == data.child('uid').val() && newData.child('email').val() == data.child('email').val() && newData.child('role').val() == data.child('role').val() && newData.child('institutionId').val() == data.child('institutionId').val() && newData.child('createdAt').val() == data.child('createdAt').val()))))"
       }
     },
     "institutions": {
+      ".read": "(auth != null && root.child('users').child(auth.uid).child('role').val() == 'platformOwner') && root.child('users').child(auth.uid).child('mustChangePassword').val() != true",
+      ".indexOn": ["name"],
       "$institutionId": {
-        ".read": "auth != null && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId",
-        ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() == 'platformOwner'"
-      }
-    },
-    "attendance": {
-      "$classId": {
-        ".read": "auth != null && root.child('users').child(auth.uid).child('institutionId').val() == $classId",
-        "$date": {
-          ".read": "auth != null",
-          "$studentUid": {
-            ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' || root.child('users').child(auth.uid).child('role').val() == 'teacher')"
-          }
-        }
-      }
-    },
-    "tests": {
-      "$institutionId": {
-        ".read": "auth != null && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId",
-        "$testId": {
-          ".read": "auth != null",
-          "_questions": {
-            ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' || root.child('users').child(auth.uid).child('role').val() == 'teacher')"
-          },
-          "_attempts": {
-            "$studentUid": {
-              ".write": "auth != null && auth.uid == $studentUid"
-            }
-          },
-          "_results": {
-            "$studentUid": {
-              ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' || root.child('users').child(auth.uid).child('role').val() == 'teacher')"
-            }
-          }
-        }
-      }
-    },
-    "materials": {
-      "$institutionId": {
-        ".read": "auth != null && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId",
-        "$materialId": {
-          ".read": "auth != null",
-          ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' || root.child('users').child(auth.uid).child('role').val() == 'teacher')"
-        }
-      }
-    },
-    "pendingAccounts": {
-      ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' && root.child('users').child(auth.uid).child('institutionId').val() !== null",
-      "$code": {
-        ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' && data.child('institutionId').val() == root.child('users').child(auth.uid).child('institutionId').val()",
-        ".write": "auth != null && ((!data.exists() && root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' && root.child('users').child(auth.uid).child('institutionId').val() !== null && root.child('institutions').child(root.child('users').child(auth.uid).child('institutionId').val()).child('status').val() == 'active' && newData.child('code').val() === $code && newData.child('email').isString() && newData.child('email').val() != '' && newData.child('displayName').isString() && newData.child('displayName').val() != '' && (newData.child('role').val() == 'student' || newData.child('role').val() == 'teacher') && newData.child('institutionId').val() == root.child('users').child(auth.uid).child('institutionId').val() && (newData.child('classId').val() === null || newData.child('classId').isString()) && newData.child('status').val() == 'unused' && newData.child('usedBy').val() === null && newData.child('createdBy').val() == auth.uid && newData.child('createdAt').isNumber()) || (data.exists() && data.child('status').val() == 'unused' && newData.child('status').val() == 'used' && newData.child('usedBy').isString() && newData.child('usedBy').val() == auth.uid && newData.child('code').val() === $code && newData.child('email').val() === data.child('email').val() && newData.child('displayName').val() === data.child('displayName').val() && newData.child('role').val() === data.child('role').val() && newData.child('institutionId').val() === data.child('institutionId').val() && newData.child('classId').val() === data.child('classId').val() && newData.child('createdBy').val() === data.child('createdBy').val() && newData.child('createdAt').val() === data.child('createdAt').val()))"
+        ".read": "(auth != null && (root.child('users').child(auth.uid).child('role').val() == 'platformOwner' || (root.child('users').child(auth.uid).child('status').val() == 'active' && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId))) && root.child('users').child(auth.uid).child('mustChangePassword').val() != true",
+        ".write": "(auth != null && (root.child('users').child(auth.uid).child('role').val() == 'platformOwner' || (root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' && root.child('users').child(auth.uid).child('status').val() == 'active' && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId && data.exists() && newData.exists() && data.child('status').val() == 'active' && newData.child('status').val() == data.child('status').val() && newData.child('id').val() == data.child('id').val() && newData.child('createdBy').val() == data.child('createdBy').val() && newData.child('createdAt').val() == data.child('createdAt').val()))) && root.child('users').child(auth.uid).child('mustChangePassword').val() != true"
       }
     },
     "institutionRequests": {
-      ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() == 'platformOwner'",
+      ".read": "(auth != null && root.child('users').child(auth.uid).child('role').val() == 'platformOwner') && root.child('users').child(auth.uid).child('mustChangePassword').val() != true",
+      ".indexOn": ["status"],
       "$requestId": {
-        ".read": "auth != null && auth.uid == $requestId",
-        ".write": "auth != null && ((auth.uid == $requestId && root.child('users').child(auth.uid).child('role').val() == 'pending' && newData.child('requesterUid').val() == $requestId && newData.child('requesterName').val() == root.child('users').child(auth.uid).child('displayName').val() && newData.child('status').val() == 'pending' && newData.child('reviewedBy').val() === null && newData.child('reviewedAt').val() === null && newData.child('institutionName').isString() && newData.child('institutionName').val() != '' && newData.child('contactEmail').isString() && newData.child('phone').isString() && newData.child('address').isString() && newData.child('createdAt').isNumber() && (!data.exists() || data.child('status').val() == 'rejected')) || (root.child('users').child(auth.uid).child('role').val() == 'platformOwner' && data.exists() && data.child('status').val() == 'pending' && (newData.child('status').val() == 'approved' || newData.child('status').val() == 'rejected') && newData.child('reviewedBy').val() == auth.uid && newData.child('requesterUid').val() == data.child('requesterUid').val() && newData.child('institutionName').val() == data.child('institutionName').val()))"
+        ".read": "(auth != null && (auth.uid == $requestId || root.child('users').child(auth.uid).child('role').val() == 'platformOwner')) && root.child('users').child(auth.uid).child('mustChangePassword').val() != true",
+        ".write": "(auth != null && ((auth.uid == $requestId && root.child('users').child(auth.uid).child('role').val() == 'pending' && newData.child('requesterUid').val() == $requestId && newData.child('requesterName').val() == root.child('users').child(auth.uid).child('displayName').val() && newData.child('status').val() == 'pending' && newData.child('reviewedBy').val() == null && newData.child('reviewedAt').val() == null && newData.child('institutionName').isString() && newData.child('institutionName').val() != '' && newData.child('contactEmail').isString() && newData.child('phone').isString() && newData.child('address').isString() && newData.child('createdAt').isNumber() && (!data.exists() || data.child('status').val() == 'rejected')) || (root.child('users').child(auth.uid).child('role').val() == 'platformOwner' && data.exists() && data.child('status').val() == 'pending' && (newData.child('status').val() == 'approved' || newData.child('status').val() == 'rejected') && newData.child('reviewedBy').val() == auth.uid && newData.child('requesterUid').val() == data.child('requesterUid').val() && newData.child('institutionName').val() == data.child('institutionName').val()))) && root.child('users').child(auth.uid).child('mustChangePassword').val() != true"
+      }
+    },
+    "pendingAccounts": {
+      "$code": {
+        ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'platformOwner' || (root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' && data.child('institutionId').val() == root.child('users').child(auth.uid).child('institutionId').val()) || data.child('email').val() == auth.token.email)",
+        ".write": "auth != null && ((!data.exists() && root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' && root.child('users').child(auth.uid).child('status').val() == 'active' && newData.child('code').val() == $code && newData.child('email').isString() && newData.child('email').val() != '' && newData.child('displayName').isString() && newData.child('displayName').val() != '' && (newData.child('role').val() == 'student' || newData.child('role').val() == 'teacher') && newData.child('institutionId').val() == root.child('users').child(auth.uid).child('institutionId').val() && root.child('institutions').child(newData.child('institutionId').val()).child('status').val() == 'active' && (newData.child('classId').val() == null || newData.child('classId').isString()) && newData.child('status').val() == 'unused' && newData.child('usedBy').val() == null && newData.child('createdBy').val() == auth.uid && newData.child('createdAt').isNumber()) || (data.exists() && data.child('status').val() == 'unused' && newData.child('status').val() == 'used' && newData.child('usedBy').val() == auth.uid && data.child('email').val() == auth.token.email && newData.child('code').val() == data.child('code').val() && newData.child('email').val() == data.child('email').val() && newData.child('displayName').val() == data.child('displayName').val() && newData.child('role').val() == data.child('role').val() && newData.child('institutionId').val() == data.child('institutionId').val() && newData.child('classId').val() == data.child('classId').val() && newData.child('createdBy').val() == data.child('createdBy').val() && newData.child('createdAt').val() == data.child('createdAt').val()) || (data.exists() && root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' && data.child('institutionId').val() == root.child('users').child(auth.uid).child('institutionId').val() && data.child('status').val() == 'unused' && !newData.exists())) && root.child('users').child(auth.uid).child('mustChangePassword').val() != true"
+      }
+    },
+    "pendingAccountsByInstitution": {
+      "$institutionId": {
+        ".read": "(auth != null && root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' && root.child('users').child(auth.uid).child('status').val() == 'active' && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId) && root.child('users').child(auth.uid).child('mustChangePassword').val() != true",
+        "$code": {
+          ".write": "(auth != null && ((!data.exists() && root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId && newData.child('code').val() == $code && newData.child('institutionId').val() == $institutionId && newData.child('status').val() == 'unused') || (data.exists() && data.child('status').val() == 'unused' && newData.child('status').val() == 'used' && newData.child('usedBy').val() == auth.uid && data.child('email').val() == auth.token.email && newData.child('email').val() == data.child('email').val()) || (data.exists() && root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId && data.child('status').val() == 'unused' && !newData.exists()))) && root.child('users').child(auth.uid).child('mustChangePassword').val() != true"
+        }
+      }
+    },
+    "$institutionId": {
+      "classes": {
+        ".read": "(auth != null && root.child('users').child(auth.uid).child('status').val() == 'active' && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId && (root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' || root.child('users').child(auth.uid).child('role').val() == 'teacher' || root.child('users').child(auth.uid).child('role').val() == 'student')) && root.child('users').child(auth.uid).child('mustChangePassword').val() != true",
+        ".write": "(auth != null && root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' && root.child('users').child(auth.uid).child('status').val() == 'active' && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId && root.child('institutions').child($institutionId).child('status').val() == 'active') && root.child('users').child(auth.uid).child('mustChangePassword').val() != true",
+        ".indexOn": ["name"]
+      },
+      "students": {
+        ".read": "(auth != null && root.child('users').child(auth.uid).child('status').val() == 'active' && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId && (root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' || root.child('users').child(auth.uid).child('role').val() == 'teacher')) && root.child('users').child(auth.uid).child('mustChangePassword').val() != true",
+        ".write": "(auth != null && root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' && root.child('users').child(auth.uid).child('status').val() == 'active' && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId && root.child('institutions').child($institutionId).child('status').val() == 'active') && root.child('users').child(auth.uid).child('mustChangePassword').val() != true",
+        ".indexOn": ["displayName"],
+        "$uid": {
+          ".read": "(auth != null && auth.uid == $uid && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId && root.child('users').child(auth.uid).child('status').val() == 'active') && root.child('users').child(auth.uid).child('mustChangePassword').val() != true",
+          ".write": "(auth != null && auth.uid == $uid && !data.exists() && root.child('users').child(auth.uid).child('role').val() == 'pending' && root.child('users').child(auth.uid).child('status').val() == 'pending' && newData.child('uid').val() == auth.uid && newData.child('email').val() == auth.token.email && newData.child('status').val() == 'active' && newData.child('activationCode').isString() && root.child('pendingAccounts').child(newData.child('activationCode').val()).child('status').val() == 'unused' && root.child('pendingAccounts').child(newData.child('activationCode').val()).child('role').val() == 'student' && root.child('pendingAccounts').child(newData.child('activationCode').val()).child('email').val() == auth.token.email && root.child('pendingAccounts').child(newData.child('activationCode').val()).child('institutionId').val() == $institutionId && root.child('pendingAccounts').child(newData.child('activationCode').val()).child('classId').val() == newData.child('classId').val() && root.child('pendingAccounts').child(newData.child('activationCode').val()).child('admissionNo').val() == newData.child('admissionNo').val() && newData.child('admissionNo').isString() && newData.child('admissionNo').val() != '' && newData.child('displayName').val() == root.child('pendingAccounts').child(newData.child('activationCode').val()).child('displayName').val()) && root.child('users').child(auth.uid).child('mustChangePassword').val() != true"
+        }
+      },
+      "teachers": {
+        ".read": "(auth != null && root.child('users').child(auth.uid).child('status').val() == 'active' && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId && (root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' || root.child('users').child(auth.uid).child('role').val() == 'teacher')) && root.child('users').child(auth.uid).child('mustChangePassword').val() != true",
+        ".write": "(auth != null && root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' && root.child('users').child(auth.uid).child('status').val() == 'active' && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId && root.child('institutions').child($institutionId).child('status').val() == 'active') && root.child('users').child(auth.uid).child('mustChangePassword').val() != true",
+        ".indexOn": ["displayName"],
+        "$teacherUid": {
+          ".write": "(auth != null && auth.uid == $teacherUid && !data.exists() && root.child('users').child(auth.uid).child('role').val() == 'pending' && root.child('users').child(auth.uid).child('status').val() == 'pending' && newData.child('uid').val() == auth.uid && newData.child('email').val() == auth.token.email && newData.child('status').val() == 'active' && newData.child('activationCode').isString() && root.child('pendingAccounts').child(newData.child('activationCode').val()).child('status').val() == 'unused' && root.child('pendingAccounts').child(newData.child('activationCode').val()).child('role').val() == 'teacher' && root.child('pendingAccounts').child(newData.child('activationCode').val()).child('email').val() == auth.token.email && root.child('pendingAccounts').child(newData.child('activationCode').val()).child('institutionId').val() == $institutionId && newData.child('displayName').val() == root.child('pendingAccounts').child(newData.child('activationCode').val()).child('displayName').val()) && root.child('users').child(auth.uid).child('mustChangePassword').val() != true"
+        }
+      },
+      "subjects": {
+        ".read": "(auth != null && root.child('users').child(auth.uid).child('status').val() == 'active' && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId && (root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' || root.child('users').child(auth.uid).child('role').val() == 'teacher')) && root.child('users').child(auth.uid).child('mustChangePassword').val() != true",
+        ".write": "(auth != null && root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' && root.child('users').child(auth.uid).child('status').val() == 'active' && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId && root.child('institutions').child($institutionId).child('status').val() == 'active') && root.child('users').child(auth.uid).child('mustChangePassword').val() != true",
+        ".indexOn": ["name"]
+      },
+      "attendance": {
+        ".read": "(auth != null && root.child('users').child(auth.uid).child('status').val() == 'active' && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId && (root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' || root.child('users').child(auth.uid).child('role').val() == 'teacher')) && root.child('users').child(auth.uid).child('mustChangePassword').val() != true",
+        ".write": "(auth != null && root.child('users').child(auth.uid).child('status').val() == 'active' && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId && root.child('institutions').child($institutionId).child('status').val() == 'active' && (root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' || root.child('users').child(auth.uid).child('role').val() == 'teacher')) && root.child('users').child(auth.uid).child('mustChangePassword').val() != true"
+      },
+      "testCatalog": {
+        ".read": "(auth != null && root.child('users').child(auth.uid).child('status').val() == 'active' && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId && (root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' || root.child('users').child(auth.uid).child('role').val() == 'teacher' || root.child('users').child(auth.uid).child('role').val() == 'student')) && root.child('users').child(auth.uid).child('mustChangePassword').val() != true",
+        ".write": "(auth != null && root.child('users').child(auth.uid).child('status').val() == 'active' && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId && (root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' || root.child('users').child(auth.uid).child('role').val() == 'teacher')) && root.child('users').child(auth.uid).child('mustChangePassword').val() != true",
+        ".indexOn": ["createdAt"]
+      },
+      "tests": {
+        ".read": "(auth != null && root.child('users').child(auth.uid).child('status').val() == 'active' && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId && (root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' || root.child('users').child(auth.uid).child('role').val() == 'teacher')) && root.child('users').child(auth.uid).child('mustChangePassword').val() != true",
+        ".write": "(auth != null && root.child('users').child(auth.uid).child('status').val() == 'active' && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId && root.child('institutions').child($institutionId).child('status').val() == 'active' && (root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' || root.child('users').child(auth.uid).child('role').val() == 'teacher')) && root.child('users').child(auth.uid).child('mustChangePassword').val() != true",
+        ".indexOn": ["createdAt"],
+        "$testId": {
+          "_studentQuestions": {
+            ".read": "(auth != null && root.child('users').child(auth.uid).child('status').val() == 'active' && root.child('users').child(auth.uid).child('role').val() == 'student' && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId && root.child('users').child(auth.uid).child('classId').val() == root.child($institutionId).child('testCatalog').child($testId).child('classId').val() && root.child($institutionId).child('testCatalog').child($testId).child('status').val() == 'published' && now >= root.child($institutionId).child('testCatalog').child($testId).child('startTime').val() && now <= root.child($institutionId).child('testCatalog').child($testId).child('endTime').val()) && root.child('users').child(auth.uid).child('mustChangePassword').val() != true"
+          },
+          "_questions": {
+            ".read": "(auth != null && root.child('users').child(auth.uid).child('status').val() == 'active' && root.child('users').child(auth.uid).child('role').val() == 'student' && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId && root.child($institutionId).child('tests').child($testId).child('_attempts').child(auth.uid).child('status').val() == 'submitted') && root.child('users').child(auth.uid).child('mustChangePassword').val() != true"
+          },
+          "_attempts": {
+            ".read": "(auth != null && root.child('users').child(auth.uid).child('status').val() == 'active' && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId && (root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' || root.child('users').child(auth.uid).child('role').val() == 'teacher')) && root.child('users').child(auth.uid).child('mustChangePassword').val() != true",
+            "$studentUid": {
+              ".read": "(auth != null && auth.uid == $studentUid && root.child('users').child(auth.uid).child('status').val() == 'active' && root.child('users').child(auth.uid).child('role').val() == 'student' && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId) && root.child('users').child(auth.uid).child('mustChangePassword').val() != true",
+              ".write": "(auth != null && auth.uid == $studentUid && root.child('users').child(auth.uid).child('status').val() == 'active' && root.child('users').child(auth.uid).child('role').val() == 'student' && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId && root.child('users').child(auth.uid).child('classId').val() == root.child($institutionId).child('testCatalog').child($testId).child('classId').val() && root.child($institutionId).child('testCatalog').child($testId).child('status').val() == 'published' && now <= root.child($institutionId).child('testCatalog').child($testId).child('endTime').val() && (!data.exists() || data.child('status').val() == 'in_progress') && newData.child('testId').val() == $testId && newData.child('studentUid').val() == $studentUid && newData.child('answers').exists() && newData.child('startedAt').isNumber() && newData.child('submittedAt').isNumber() && (newData.child('status').val() == 'in_progress' || newData.child('status').val() == 'submitted') && (newData.child('status').val() != 'in_progress' || newData.child('submittedAt').val() == 0)) && root.child('users').child(auth.uid).child('mustChangePassword').val() != true"
+            }
+          },
+          "_results": {
+            ".read": "(auth != null && root.child('users').child(auth.uid).child('status').val() == 'active' && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId && (root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' || root.child('users').child(auth.uid).child('role').val() == 'teacher')) && root.child('users').child(auth.uid).child('mustChangePassword').val() != true",
+            ".write": "(auth != null && root.child('users').child(auth.uid).child('status').val() == 'active' && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId && (root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' || root.child('users').child(auth.uid).child('role').val() == 'teacher')) && root.child('users').child(auth.uid).child('mustChangePassword').val() != true",
+            "$studentUid": {
+              ".read": "(auth != null && auth.uid == $studentUid && root.child('users').child(auth.uid).child('status').val() == 'active' && root.child('users').child(auth.uid).child('role').val() == 'student' && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId && root.child($institutionId).child('testCatalog').child($testId).child('showResults').val() == true) && root.child('users').child(auth.uid).child('mustChangePassword').val() != true",
+              ".write": "(auth != null && auth.uid == $studentUid && root.child('users').child(auth.uid).child('role').val() == 'student' && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId && root.child($institutionId).child('tests').child($testId).child('_attempts').child(auth.uid).child('status').val() == 'submitted' && !data.exists() && newData.child('score').isNumber() && newData.child('total').isNumber() && newData.child('score').val() >= 0 && newData.child('score').val() <= newData.child('total').val() && newData.child('gradedAt').isNumber() && newData.child('method').val() == 'client') && root.child('users').child(auth.uid).child('mustChangePassword').val() != true"
+            }
+          }
+        }
+      },
+      "materials": {
+        ".read": "(auth != null && root.child('users').child(auth.uid).child('status').val() == 'active' && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId && (root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' || root.child('users').child(auth.uid).child('role').val() == 'teacher' || root.child('users').child(auth.uid).child('role').val() == 'student')) && root.child('users').child(auth.uid).child('mustChangePassword').val() != true",
+        ".write": "(auth != null && root.child('users').child(auth.uid).child('status').val() == 'active' && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId && root.child('institutions').child($institutionId).child('status').val() == 'active' && (root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' || root.child('users').child(auth.uid).child('role').val() == 'teacher')) && root.child('users').child(auth.uid).child('mustChangePassword').val() != true",
+        ".indexOn": ["createdAt"],
+        "$materialId": {
+          "downloadCount": {
+            ".write": "(auth != null && root.child('users').child(auth.uid).child('status').val() == 'active' && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId && root.child('institutions').child($institutionId).child('status').val() == 'active' && (root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' || root.child('users').child(auth.uid).child('role').val() == 'teacher' || root.child('users').child(auth.uid).child('role').val() == 'student')) && root.child('users').child(auth.uid).child('mustChangePassword').val() != true"
+          }
+        }
       }
     }
   }

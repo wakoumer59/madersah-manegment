@@ -9,7 +9,7 @@ more protection than exists; known trade-offs are stated plainly.
 | --- | --- | --- |
 | React UI | nothing — UI guards are convenience only | any client-supplied role, institutionId, or permission |
 | Firebase Security Rules | the signed-in uid + the database record at `/users/{uid}` | anything the browser sends about identity beyond the auth token |
-| Firebase Auth | the email/password provider (passwords never touch our code/storage) | — |
+| Firebase Auth | the email/password provider and server-only Admin SDK | — |
 
 **Default deny.** Both rule files start with `.read: false` / `allow read, write: if false`.
 Every allowance below is explicit and tested.
@@ -23,7 +23,7 @@ Every allowance below is explicit and tested.
   the app is impossible without the owner acting.
 - Only the **platform owner** changes roles of `institutionAdmin` and above, and manages
   institution status (suspend/reactivate).
-- An **institution admin** may update (never create/delete) users of their own institution,
+- An **institution admin** may update users of their own institution and remove teacher/student records,
   but `role`, `email`, `uid`, and `institutionId` are immutable to them — proven by rules
   tests (`tests/rules/database.rules.test.ts`).
 - **No user can edit the platform owner's record.**
@@ -60,26 +60,33 @@ never be committed. Bootstrap with the Firebase Console (console writes bypass r
 
 - Passwords are handled exclusively by Firebase Authentication (never stored in the database,
   storage, logs, or source).
-- Reset via Firebase's `sendPasswordResetEmail` (free plan ≈10/day; an admin-issued activation
-  code is the fallback path in later phases).
+- Institution admins create teacher/student accounts through authenticated Vercel API routes;
+  the API verifies the Firebase ID token and derives the institution from the admin's profile.
+  The server-only Firebase Admin SDK key is stored in Vercel environment variables, never in
+  the browser bundle or repository.
+- Newly created accounts have `mustChangePassword: true`. Database rules block their access to
+  institution data until they reauthenticate with the temporary password and change it. The
+  API updates the Auth password and clears this flag. Existing invitation-code activation
+  remains supported for codes created before this change.
+- Existing accounts can recover access through Firebase's password-reset email flow. Older,
+  not-yet-activated invitation-code accounts can still complete their original activation.
 
 ## 7. Known trade-offs (honest list)
 
-- **Auto-grading (Phase 5)** will compute objective scores in the client after submission.
-  Attempts are create-only and the answer key is readable only after a valid submission exists,
-  so answers cannot be changed and the key cannot be read early — but a malicious student could
-  inflate their own stored score. Teachers can always inspect the raw submitted answers and
-  correct results. A Cloud Function re-grader (requires Firebase Blaze plan) is the documented
-  upgrade path.
-- **Storage rules (Phase 6)** will scope materials to the institution; class-level visibility
-  for students is enforced in app + metadata, not in Storage rules (rules cannot cheaply read
-  RTDB class assignments).
+- **Test grading is client-side.** Students can read the answer key and write their own result
+  after submitting an attempt. Student results are only readable after staff set `showResults`
+  to true. A malicious student can falsify their score; results are not authoritative. Teachers
+  should verify submitted answers. Trusted grading requires a server-side component (for
+  example, a Cloud Function).
+- **Storage cannot read Realtime Database role records.** Without a trusted backend to mint
+  custom claims, each Storage object is scoped to its uploader UID. Other institution members
+  receive the Firebase download URL from tenant-protected RTDB metadata; that URL is a bearer
+  link and should be treated as shareable. Only the uploader can replace or delete the file.
 
 ## 8. Automated verification
 
 ```bash
-npm run test:rules      # RTDB Security Rules vs the emulator — tenant isolation,
-                        # role escalation, request approval, suspension
+npm run test:rules      # RTDB + Storage Security Rules against local emulators
 ```
 
 Requires **Java 11+** (the Realtime Database emulator is a Java app). On a machine without
@@ -90,7 +97,7 @@ credentials are needed.
 Rules are deployed to a real project only via:
 
 ```bash
-firebase deploy --only database,storage --config firebase/firebase.json
+npx firebase-tools deploy --only database,storage --config firebase/firebase.json --project <firebase-project-id>
 ```
 
 (Review `firebase/database.rules.json` and `firebase/storage.rules` before deploying.)

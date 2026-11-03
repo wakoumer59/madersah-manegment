@@ -1,3 +1,4 @@
+import { translate  } from '@/i18n';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Plus, Clock } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
@@ -89,7 +90,7 @@ export default function TestListPage() {
         startDate: todayIso(), startTime: '09:00', endDate: todayIso(), endTime: '11:00',
         durationMin: '60', maxScore: '100' });
       setFieldErrors({});
-      toast.success('Test created.');
+      toast.success(translate("Test created."));
     } catch (err) { setError(errorMessage(err)); }
   };
   const handleDelete = async (test: Test) => {
@@ -97,14 +98,14 @@ export default function TestListPage() {
     try {
       await deleteTest(institutionId, test.id);
       setOpenDelete(null);
-      toast.success('Test deleted.');
+      toast.success(translate("Test deleted."));
     } catch (err) { setError(errorMessage(err)); } finally { setDeleting(null); }
   };
 
   const handlePublish = async (test: Test, status: 'published' | 'closed') => {
     try {
       await updateTest({ institutionId, testId: test.id, patch: { status } });
-      toast.success(`Test ${status}.`);
+      toast.success(translate('Test {status}.', { status: translate(status) }));
     } catch (err) { setError(errorMessage(err)); }
   };
   if (loading) return <LoadingSpinner fullPage />;
@@ -112,7 +113,7 @@ export default function TestListPage() {
     return (
       <AppShell variant="admin">
         <div role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error} <button type="button" onClick={() => void load()} className="font-medium underline ml-2">Retry</button>
+          {error} <button type="button" onClick={() => void load()} className="font-medium underline ml-2">{translate("Retry")}</button>
         </div>
       </AppShell>
     );
@@ -124,35 +125,35 @@ export default function TestListPage() {
     <AppShell variant="admin">
       <div className="mb-5 flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Online Tests</h1>
-          <p className="text-sm text-slate-500">Create and manage tests for your students.</p>
+          <h1 className="text-2xl font-bold text-slate-900">{translate("Online Tests")}</h1>
+          <p className="text-sm text-slate-500">{translate("Create and manage tests for your students.")}</p>
         </div>
-        <Button onClick={() => setOpenForm(true)}><Plus className="h-4 w-4" /> Add test</Button>
+        <Button onClick={() => setOpenForm(true)}><Plus className="h-4 w-4" /> {' '}{translate("Add test")}</Button>
       </div>
 
       {!loading && !error && testCount === 0 && (
-        <EmptyState icon={<Clock className="h-10 w-10" />} title="No tests yet" description="Create your first test to assess your students." action={<Button>Add test</Button>} />
+        <EmptyState icon={<Clock className="h-10 w-10" />} title={translate("No tests yet")} description={translate("Create your first test to assess your students.")} />
       )}
 
       {!loading && !error && testCount > 0 && (
         <>
           <DataTable<Test>
             columns={[
-              { key: 'title', label: 'Test Title' },
-              { key: 'classId', label: 'Class', render: (t) => classOptions.find((c) => c.id === t.classId)?.name || '—' },
-              { key: 'subjectId', label: 'Subject', render: (t) => subjectOptions.find((s) => s.id === t.subjectId)?.name || '—' },
+              { key: 'title', label: translate("Test Title") },
+              { key: 'classId', label: translate("Class"), render: (t) => classOptions.find((c) => c.id === t.classId)?.name || '—' },
+              { key: 'subjectId', label: translate("Subject"), render: (t) => subjectOptions.find((s) => s.id === t.subjectId)?.name || '—' },
               {
-                key: 'status', label: 'Status',
-                render: (t) => <span className={`px-2 py-1 rounded text-xs font-medium ${t.status === 'published' ? 'bg-emerald-100 text-emerald-700' : t.status === 'closed' ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-600'}`}>{t.status}</span>,
+                key: 'status', label: translate("Status"),
+                render: (t) => <span className={`px-2 py-1 rounded text-xs font-medium ${t.status === 'published' ? 'bg-emerald-100 text-emerald-700' : t.status === 'closed' ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-600'}`}>{translate(t.status)}</span>,
               },
               {
                 key: 'actions', label: '',
                 render: (t) => (
                   <div className="flex gap-2">
                     <Button variant="secondary" onClick={() => handlePublish(t, t.status === 'published' ? 'closed' : 'published')}>
-                      {t.status === 'published' ? 'Close' : 'Publish'}
+                      {t.status === 'published' ? translate('Close') : translate('Publish')}
                     </Button>
-                    <Button variant="danger" onClick={() => setOpenDelete(t)}>Delete</Button>
+                    <Button variant="danger" onClick={() => setOpenDelete(t)}>{translate("Delete")}</Button>
                   </div>
                 ),
               },
@@ -161,56 +162,56 @@ export default function TestListPage() {
           />
           {hasMore && (
             <div className="mt-4 flex justify-center">
-              <Button variant="secondary" onClick={() => setCursor((c) => c ?? '')} className="w-full sm:w-auto">Load more</Button>
+              <Button variant="secondary" onClick={() => setCursor((c) => c ?? '')} className="w-full sm:w-auto">{translate("Load more")}</Button>
             </div>
           )}
         </>
       )}
-      <Modal open={openForm} title="Create test" onClose={() => setOpenForm(false)} busy={deleting !== null}>
+      <Modal open={openForm} title={translate("Create test")} onClose={() => setOpenForm(false)} busy={deleting !== null}>
         <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
           {error && <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
-          <FormInput label="Title" required value={form.title} error={fieldErrors.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-          <FormInput label="Description" value={form.description} error={fieldErrors.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-          <Select label="Class" required value={form.classId} onChange={(e) => setForm({ ...form, classId: e.target.value })}>
-            <option value="">Select a class</option>
+          <FormInput label={translate("Title")} required value={form.title} error={fieldErrors.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+          <FormInput label={translate("Description")} value={form.description} error={fieldErrors.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+          <Select label={translate("Class")} required value={form.classId} onChange={(e) => setForm({ ...form, classId: e.target.value })}>
+            <option value="">{translate("Select a class")}</option>
             {classOptions.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </Select>
-          <Select label="Subject (optional)" value={form.subjectId} onChange={(e) => setForm({ ...form, subjectId: e.target.value })}>
-            <option value="">None</option>
+          <Select label={translate("Subject (optional)")} value={form.subjectId} onChange={(e) => setForm({ ...form, subjectId: e.target.value })}>
+            <option value="">{translate("None")}</option>
             {subjectOptions.filter((s) => !form.classId || s.classId === form.classId).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </Select>
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-slate-700">Starts at</label>
+              <label className="text-sm font-medium text-slate-700">{translate("Starts at")}</label>
               <input type="datetime-local" value={`${form.startDate}T${form.startTime}`} onChange={(e) => { const [d, t] = e.target.value.split('T'); setForm({ ...form, startDate: d, startTime: t }); }} className={INPUT_CLASSES} />
             </div>
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-slate-700">Ends at</label>
+              <label className="text-sm font-medium text-slate-700">{translate("Ends at")}</label>
               <input type="datetime-local" value={`${form.endDate}T${form.endTime}`} onChange={(e) => { const [d, t] = e.target.value.split('T'); setForm({ ...form, endDate: d, endTime: t }); }} className={INPUT_CLASSES} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-slate-700">Duration (min)</label>
+              <label className="text-sm font-medium text-slate-700">{translate("Duration (min)")}</label>
               <input type="number" min="1" value={form.durationMin} onChange={(e) => setForm({ ...form, durationMin: e.target.value })} className={INPUT_CLASSES} />
             </div>
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-slate-700">Max score</label>
+              <label className="text-sm font-medium text-slate-700">{translate("Max score")}</label>
               <input type="number" min="1" value={form.maxScore} onChange={(e) => setForm({ ...form, maxScore: e.target.value })} className={INPUT_CLASSES} />
             </div>
           </div>
           <div className="mt-4 flex justify-end gap-3">
-            <Button variant="secondary" onClick={() => setOpenForm(false)} disabled={deleting !== null}>Cancel</Button>
-            <Button type="submit" loading={deleting !== null}>Create test</Button>
+            <Button variant="secondary" onClick={() => setOpenForm(false)} disabled={deleting !== null}>{translate("Cancel")}</Button>
+            <Button type="submit" loading={deleting !== null}>{translate("Create test")}</Button>
           </div>
         </form>
       </Modal>
 
       <ConfirmDialog
         open={openDelete !== null}
-        title="Delete test"
-        message={openDelete ? `Remove “${openDelete.title}”? This cannot be undone.` : ''}
-        confirmLabel="Delete"
+        title={translate("Delete test")}
+        message={openDelete ? translate('Remove “{name}”? This cannot be undone.', { name: openDelete.title }) : ''}
+        confirmLabel={translate("Delete")}
         danger
         busy={deleting === openDelete}
         onConfirm={() => { if (openDelete) handleDelete(openDelete); }}

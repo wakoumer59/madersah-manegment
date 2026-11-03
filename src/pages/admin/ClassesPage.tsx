@@ -1,5 +1,6 @@
+import { translate  } from '@/i18n';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { Plus, School } from 'lucide-react';
+import { Plus, School, Trash2 } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { Button } from '@/components/common/Button';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
@@ -26,6 +27,7 @@ export default function ClassesPage() {
   const { userRecord } = useAuth();
   const toast = useToast();
   const institutionId = userRecord?.institutionId ?? '';
+  const canManageClasses = userRecord?.role === 'institutionAdmin';
   const [items, setItems] = useState<SchoolClass[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -73,7 +75,7 @@ export default function ClassesPage() {
         institutionId, name: form.name, academicYear: form.academicYear,
         teacherUid: form.teacherUid || null,
       });
-      toast.success('Class created.');
+      toast.success(translate("Class created."));
       setOpenForm(false);
       setForm({ name: '', academicYear: '', teacherUid: '' });
       await load();
@@ -86,37 +88,44 @@ export default function ClassesPage() {
 
   const handleDelete = async (cls: SchoolClass) => {
     setDeleting(cls);
-    await deleteClass(institutionId, cls.id);
-    setDeleting(null);
-    setOpenDelete(null);
-    toast.success('Class removed.');
-    await load();
+    try {
+      await deleteClass(institutionId, cls.id);
+      setOpenDelete(null);
+      toast.success(translate("Class removed."));
+      await load();
+    } catch (err) {
+      setError(errorMessage(err));
+      toast.error(errorMessage(err));
+    } finally {
+      setDeleting(null);
+    }
   };
 
   return (
     <AppShell variant="admin">
       <div className="mb-5 flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Classes</h1>
-          <p className="text-sm text-slate-500">Manage classes and academic years.</p>
+          <h1 className="text-2xl font-bold text-slate-900">{translate("Classes")}</h1>
+          <p className="text-sm text-slate-500">{translate("Manage classes and academic years.")}</p>
         </div>
-        <Button onClick={() => setOpenForm(true)}><Plus className="h-4 w-4" /> Add class</Button>
+        {canManageClasses && (
+          <Button onClick={() => setOpenForm(true)}><Plus className="h-4 w-4" /> {' '}{translate("Add class")}</Button>
+        )}
       </div>
 
       {loading ? (
         <LoadingSpinner fullPage />
       ) : error && (
         <div role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}{' '}<button type="button" onClick={() => void load()} className="font-medium underline">Retry</button>
+          {error}{' '}<button type="button" onClick={() => void load()} className="font-medium underline">{translate("Retry")}</button>
         </div>
       )}
 
       {!loading && !error && items.length === 0 && (
         <EmptyState
           icon={<School className="h-10 w-10" />}
-          title="No classes yet"
-          description="Add your first class to begin enrolling students."
-          action={<Button>Add class</Button>}
+          title={translate("No classes yet")}
+          description={translate("Add your first class to begin enrolling students.")}
         />
       )}
 
@@ -124,38 +133,48 @@ export default function ClassesPage() {
         <>
           <DataTable<SchoolClass>
             columns={[
-              { key: 'name', label: 'Class Name' },
-              { key: 'academicYear', label: 'Academic Year' },
-              { key: 'teacherUid', label: 'Teacher', render: (c) => teachers.find((t) => t.uid === c.teacherUid)?.displayName || '—' },
-              { key: 'studentCount', label: 'Students', render: (c) => String(c.studentCount) },
+              { key: 'name', label: translate("Class Name") },
+              { key: 'academicYear', label: translate("Academic Year") },
+              { key: 'teacherUid', label: translate("Teacher"), render: (c) => teachers.find((t) => t.uid === c.teacherUid)?.displayName || '—' },
+              { key: 'studentCount', label: translate("Students"), render: (c) => String(c.studentCount) },
             ]}
             items={items}
+            renderActions={canManageClasses ? (schoolClass) => (
+              <button
+                type="button"
+                aria-label={`Delete ${schoolClass.name}`}
+                onClick={() => setOpenDelete(schoolClass)}
+                className="rounded p-1 text-red-600 hover:bg-red-50"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            ) : undefined}
           />
           <Pagination page={1} hasMore={hasMore} onNext={() => setCursor((c) => c ?? '')} onPrev={() => setCursor(null)} />
         </>
       )}
 
-      <Modal open={openForm} title="Add class" onClose={() => setOpenForm(false)} busy={submitting}>
+      <Modal open={openForm} title={translate("Add class")} onClose={() => setOpenForm(false)} busy={submitting}>
         <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
           {error && <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
-          <FormInput label="Class name (e.g. Grade 7A)" required value={form.name} error={fieldErrors.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          <FormInput label="Academic year (e.g. 2026/2027)" required value={form.academicYear} error={fieldErrors.academicYear} onChange={(e) => setForm({ ...form, academicYear: e.target.value })} />
-          <Select label="Class teacher (optional)" value={form.teacherUid} onChange={(e) => setForm({ ...form, teacherUid: e.target.value })}>
-            <option value="">None assigned</option>
+          <FormInput label={translate("Class name (e.g. Grade 7A)")} required value={form.name} error={fieldErrors.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          <FormInput label={translate("Academic year (e.g. 2026/2027)")} required value={form.academicYear} error={fieldErrors.academicYear} onChange={(e) => setForm({ ...form, academicYear: e.target.value })} />
+          <Select label={translate("Class teacher (optional)")} value={form.teacherUid} onChange={(e) => setForm({ ...form, teacherUid: e.target.value })}>
+            <option value="">{translate("None assigned")}</option>
             {teachers.map((t) => <option key={t.uid} value={t.uid}>{t.displayName}</option>)}
           </Select>
           <div className="mt-4 flex justify-end gap-3">
-            <Button variant="secondary" onClick={() => setOpenForm(false)} disabled={submitting}>Cancel</Button>
-            <Button type="submit" loading={submitting}>Add class</Button>
+            <Button variant="secondary" onClick={() => setOpenForm(false)} disabled={submitting}>{translate("Cancel")}</Button>
+            <Button type="submit" loading={submitting}>{translate("Add class")}</Button>
           </div>
         </form>
       </Modal>
 
       <ConfirmDialog
         open={openDelete !== null}
-        title="Delete class"
-        message={openDelete ? `Remove “${openDelete.name}”? Students in this class will lose their class assignment.` : ''}
-        confirmLabel="Delete"
+        title={translate("Delete class")}
+        message={openDelete ? translate('Remove “{name}”? Students will be unassigned from this class.', { name: openDelete.name }) : ''}
+        confirmLabel={translate("Delete")}
         danger
         busy={deleting === openDelete}
         onConfirm={() => { if (openDelete) handleDelete(openDelete); }}

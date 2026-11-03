@@ -8,6 +8,7 @@ import NotFoundPage from '@/pages/NotFoundPage';
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage'));
 const SignupPage = lazy(() => import('@/pages/auth/SignupPage'));
 const ForgotPasswordPage = lazy(() => import('@/pages/auth/ForgotPasswordPage'));
+const ChangePasswordPage = lazy(() => import('@/pages/auth/ChangePasswordPage'));
 const RegisterInstitutionPage = lazy(() => import('@/pages/auth/RegisterInstitutionPage'));
 const ActivatePage = lazy(() => import('@/pages/auth/ActivatePage'));
 const PendingAccountPage = lazy(() => import('@/pages/PendingAccountPage'));
@@ -38,6 +39,7 @@ function HomeRedirect() {
   if (configError) return <LoadingSpinner fullPage />;
   if (loading) return <LoadingSpinner fullPage />;
   if (!authUser) return <Navigate to="/login" replace state={{ from: location }} />;
+  if (userRecord?.mustChangePassword) return <Navigate to="/change-password" replace />;
   return <Navigate to={homePathForRole(userRecord?.role ?? null)} replace />;
 }
 
@@ -49,6 +51,14 @@ export function AppRoutes() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route
+          path="/change-password"
+          element={
+            <RequireAuth>
+              <ChangePasswordPage />
+            </RequireAuth>
+          }
+        />
 
         {/* Institution registration — pending users only */}
         <Route

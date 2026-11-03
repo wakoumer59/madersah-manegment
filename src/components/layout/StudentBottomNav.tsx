@@ -1,6 +1,7 @@
+import { translate  } from '@/i18n';
 import { NavLink } from 'react-router-dom';
 import type { ShellVariant } from '@/components/layout/AdminSidebar';
-import { NAV_SECTIONS } from '@/components/layout/AdminSidebar';
+import { getNavSections } from '@/components/layout/AdminSidebar';
 
 /**
  * Mobile bottom navigation (below md). Items are the first (unsectioned or
@@ -14,12 +15,12 @@ export function BottomNav({
   variant: ShellVariant;
   itemLimit?: number;
 }) {
-  const items = NAV_SECTIONS[variant].flatMap((section) => section.items).slice(0, itemLimit);
+  const items = getNavSections()[variant].flatMap((section) => section.items).slice(0, itemLimit);
   const activeFill = variant === 'student' ? '#4f46e5' : '#ea580c';
 
   return (
     <nav
-      aria-label="Quick navigation"
+      aria-label={translate("Quick navigation")}
       className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)] md:hidden"
     >
       <div className="flex items-stretch justify-around">

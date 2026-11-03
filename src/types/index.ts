@@ -28,6 +28,7 @@ export interface UserRecord {
   institutionId: string | null;
   /** students only */
   classId: string | null;
+  mustChangePassword?: boolean;
   createdAt: number;
 }
 
@@ -182,6 +183,7 @@ export interface PendingAccount {
   role: 'student' | 'teacher';
   institutionId: string;
   classId: string | null;
+  admissionNo: string | null;
   status: 'unused' | 'used';
   createdBy: string;
   createdAt: number;

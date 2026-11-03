@@ -18,6 +18,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { translate } from '@/i18n';
 import { strings } from '@/strings';
 
 export interface NavItem {
@@ -39,11 +40,12 @@ export const ACCENTS: Record<ShellVariant, { active: string; chip: string }> = {
   student: { active: 'bg-indigo-50 text-indigo-700', chip: 'bg-indigo-600' },
 };
 
-export const NAV_SECTIONS: Record<ShellVariant, NavSection[]> = {
+export function getNavSections(): Record<ShellVariant, NavSection[]> {
+  return {
   admin: [
     { items: [{ label: strings.nav.dashboard, to: '/admin', icon: LayoutDashboard }] },
     {
-      title: 'Academics',
+      title: translate('Academics'),
       items: [
         { label: strings.nav.students, to: '/admin/students', icon: Users },
         { label: strings.nav.teachers, to: '/admin/teachers', icon: UserRound },
@@ -53,28 +55,28 @@ export const NAV_SECTIONS: Record<ShellVariant, NavSection[]> = {
       ],
     },
     {
-      title: 'Assessments',
+      title: translate('Assessments'),
       items: [
         { label: strings.nav.tests, to: '/admin/tests', icon: ClipboardList },
         { label: strings.nav.testResults, to: '/admin/results', icon: BarChart3 },
       ],
     },
     {
-      title: 'Content',
+      title: translate('Content'),
       items: [
         { label: strings.nav.materials, to: '/admin/materials', icon: FolderOpen },
         { label: strings.nav.reports, to: '/admin/reports', icon: FileText, soon: true },
       ],
     },
     {
-      title: 'System',
+      title: translate('System'),
       items: [{ label: strings.nav.settings, to: '/admin/settings', icon: Settings, soon: true }],
     },
   ],
   student: [
     { items: [{ label: strings.nav.home, to: '/student', icon: GraduationCap }] },
     {
-      title: 'My learning',
+      title: translate('My learning'),
       items: [
         { label: strings.nav.myAttendance, to: '/student/attendance', icon: CalendarCheck, soon: true },
         { label: strings.nav.myTests, to: '/student/tests', icon: ClipboardList },
@@ -83,24 +85,25 @@ export const NAV_SECTIONS: Record<ShellVariant, NavSection[]> = {
       ],
     },
     {
-      title: 'Account',
+      title: translate('Account'),
       items: [{ label: strings.nav.account, to: '/student/account', icon: UserRound, soon: true }],
     },
   ],
   owner: [
-    { items: [{ label: 'Overview', to: '/owner', icon: Gauge }] },
+    { items: [{ label: translate('Overview'), to: '/owner', icon: Gauge }] },
     {
-      title: 'Platform',
+      title: translate("Platform"),
       items: [
-        { label: 'Institution Requests', to: '/owner/requests', icon: Inbox },
-        { label: 'Institutions', to: '/owner/institutions', icon: Building2 },
+        { label: translate('Institution Requests'), to: '/owner/requests', icon: Inbox },
+        { label: translate('Institutions'), to: '/owner/institutions', icon: Building2 },
       ],
     },
   ],
-};
+  };
+}
 
 export function findNavItem(pathname: string, variant: ShellVariant): NavItem | undefined {
-  const flat = NAV_SECTIONS[variant].flatMap((section) => section.items);
+  const flat = getNavSections()[variant].flatMap((section) => section.items);
   return [...flat]
     .sort((a, b) => b.to.length - a.to.length)
     .find((item) =>
@@ -126,7 +129,7 @@ function NavItemLink({ item, variant }: { item: NavItem; variant: ShellVariant }
       <span className="flex-1 truncate">{item.label}</span>
       {item.soon && (
         <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500">
-          Soon
+          {translate('Soon')}
         </span>
       )}
     </NavLink>
@@ -135,16 +138,17 @@ function NavItemLink({ item, variant }: { item: NavItem; variant: ShellVariant }
 
 /** Full sectioned navigation — shared by the desktop sidebar and mobile drawer. */
 export function NavSections({ variant }: { variant: ShellVariant }) {
+  const sections = getNavSections()[variant];
   return (
     <div className="flex flex-col gap-4">
-      {NAV_SECTIONS[variant].map((section, index) => (
+      {sections.map((section, index) => (
         <div key={section.title ?? index}>
           {section.title && (
             <p className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
               {section.title}
             </p>
           )}
-          <nav className="flex flex-col gap-0.5" aria-label={section.title ?? 'Main navigation'}>
+          <nav className="flex flex-col gap-0.5" aria-label={section.title ?? translate('Main navigation')}>
             {section.items.map((item) => (
               <NavItemLink key={item.to} item={item} variant={variant} />
             ))}
@@ -207,4 +211,3 @@ export function AppSidebar({ variant }: { variant: ShellVariant }) {
     </aside>
   );
 }
-

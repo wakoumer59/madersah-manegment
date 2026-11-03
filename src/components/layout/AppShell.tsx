@@ -1,3 +1,4 @@
+import { translate  } from '@/i18n';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
 import { GraduationCap, X } from 'lucide-react';
@@ -52,7 +53,7 @@ export function AppShell({ variant, children }: AppShellProps) {
           <div
             role="dialog"
             aria-modal="true"
-            aria-label="Navigation menu"
+            aria-label={translate("Navigation menu")}
             className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-white shadow-xl"
           >
             <div className="flex items-center justify-between px-4 py-4">
@@ -72,7 +73,7 @@ export function AppShell({ variant, children }: AppShellProps) {
               <button
                 type="button"
                 onClick={() => setMenuOpen(false)}
-                aria-label="Close menu"
+                aria-label={translate("Close menu")}
                 className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"
               >
                 <X className="h-5 w-5" />

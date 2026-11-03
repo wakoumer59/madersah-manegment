@@ -1,5 +1,6 @@
+import { translate  } from '@/i18n';
 import type { ReactNode } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { useAuth } from '@/contexts/AuthContext';
 import { SetupNoticePage } from '@/pages/SetupNoticePage';
@@ -25,14 +26,18 @@ export function homePathForRole(role: UserRole | null): string {
 /** Blocks rendering until auth state is known; redirects guests to /login. */
 export function RequireAuth({ children }: { children: ReactNode }) {
   const { authUser, userRecord, loading, configError, accountError } = useAuth();
+  const location = useLocation();
 
   if (configError) {
-    return <SetupNoticePage title="Configuration required" message={configError} />;
+    return <SetupNoticePage title={translate("Configuration required")} message={configError} />;
   }
   if (loading) return <LoadingSpinner fullPage />;
   if (!authUser) return <Navigate to="/login" replace />;
   if (!userRecord && accountError) {
-    return <SetupNoticePage title="Account problem" message={accountError} />;
+    return <SetupNoticePage title={translate("Account problem")} message={accountError} />;
+  }
+  if (userRecord?.mustChangePassword && location.pathname !== '/change-password') {
+    return <Navigate to="/change-password" replace />;
   }
   return <>{children}</>;
 }

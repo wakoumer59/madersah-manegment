@@ -14,7 +14,7 @@ const VALID_RULE_KEYS = new Set([
 const errors = [];
 const warnings = [];
 
-function validateNode(path, node, parentIsWildcard = false) {
+function validateNode(path, node) {
   if (typeof node === 'boolean' || typeof node === 'number') {
     return;
   }
@@ -25,6 +25,9 @@ function validateNode(path, node, parentIsWildcard = false) {
     return;
   }
   if (Array.isArray(node)) {
+    if (path.endsWith('/.indexOn') && node.every((value) => typeof value === 'string')) {
+      return;
+    }
     errors.push(`${path}: rule value must not be an array`);
     return;
   }
@@ -40,7 +43,7 @@ function validateNode(path, node, parentIsWildcard = false) {
       }
       validateNode(childPath, value);
     } else {
-      validateNode(childPath, value, key.startsWith('$'));
+      validateNode(childPath, value);
     }
   }
 }

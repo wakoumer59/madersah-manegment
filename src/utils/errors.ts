@@ -1,6 +1,7 @@
 // Maps Firebase Auth error codes to friendly, non-technical messages.
 // Never display raw Firebase error messages to end users.
 import { strings } from '@/strings';
+import { translate } from '@/i18n';
 
 export function mapAuthError(error: unknown): string {
   const code = typeof error === 'object' && error !== null && 'code' in error
@@ -17,19 +18,19 @@ export function mapAuthError(error: unknown): string {
     case 'auth/weak-password':
       return strings.errors.weakPassword;
     case 'auth/invalid-email':
-      return 'Enter a valid email address.';
+      return translate('Enter a valid email address.');
     case 'auth/network-request-failed':
       return strings.errors.noConnection;
     case 'auth/too-many-requests':
       return strings.errors.tooManyRequests;
     case 'auth/user-disabled':
-      return 'This account has been disabled. Contact your administrator.';
+      return translate('This account has been disabled. Contact your administrator.');
     default:
       return strings.errors.generic;
   }
 }
 
 export function errorMessage(error: unknown): string {
-  if (error instanceof Error && error.message) return error.message;
+  if (error instanceof Error && error.message) return translate(error.message);
   return strings.errors.generic;
 }

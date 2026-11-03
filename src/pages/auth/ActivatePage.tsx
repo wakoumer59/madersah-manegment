@@ -1,3 +1,4 @@
+import { translate  } from '@/i18n';
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthLayout } from '@/components/layout/AuthLayout';
@@ -5,6 +6,7 @@ import { Button } from '@/components/common/Button';
 import { FormInput } from '@/components/common/FormInput';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
+import { strings } from '@/strings';
 import { mapAuthError } from '@/utils/errors';
 import { isNonEmpty, isValidEmail } from '@/utils/validation';
 import { redeemCodeAndActivate } from '@/services/userService';
@@ -42,7 +44,7 @@ export default function ActivatePage() {
     setFormError(null);
     if (!validate()) return;
     if (!authUser) {
-      setFormError('You must be signed in to activate your account.');
+      setFormError(translate('You must be signed in to activate your account.'));
       return;
     }
     setSubmitting(true);
@@ -50,7 +52,7 @@ export default function ActivatePage() {
       // The user has already signed up (role='pending'). Redeem the activation
       // code to activate the account with its real role/institution/class.
       const role = await redeemCodeAndActivate(authUser.uid, values.email, values.activationCode);
-      toast.success(`Account activated (${role}).`);
+      toast.success(translate('Account activated ({role}).', { role: strings.roles[role] }));
       await navigate(homePathForRole(role), { replace: true });
     } catch (error) {
       setFormError(mapAuthError(error));
@@ -61,8 +63,8 @@ export default function ActivatePage() {
 
   return (
     <AuthLayout
-      title="Activate your account"
-      subtitle="Enter your activation code to complete sign-up."
+      title={translate("Activate your account")}
+      subtitle={translate("Enter your activation code to complete sign-up.")}
     >
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
         {formError && (
@@ -72,14 +74,13 @@ export default function ActivatePage() {
         )}
         {userRecord?.role === 'pending' ? (
           <p className="text-sm text-slate-600">
-            Your account is pending activation. Enter the invitation code you received from your madrasah administrator.
-          </p>
+            {translate("Your account is pending activation. Enter the invitation code you received from your madrasah administrator.")}{' '}</p>
         ) : null}
-        <FormInput label="Email address" type="email" inputMode="email" autoComplete="email" required value={values.email} error={fieldErrors.email} onChange={update('email')} />
-        <FormInput label="Activation code" required value={values.activationCode} error={fieldErrors.activationCode} onChange={update('activationCode')} />
-        <Button type="submit" loading={submitting} className="w-full">{submitting ? 'Activating…' : 'Activate account'}</Button>
+        <FormInput label={translate("Email address")} type="email" inputMode="email" autoComplete="email" required value={values.email} error={fieldErrors.email} onChange={update('email')} />
+        <FormInput label={translate("Activation code")} required value={values.activationCode} error={fieldErrors.activationCode} onChange={update('activationCode')} />
+        <Button type="submit" loading={submitting} className="w-full">{submitting ? translate('Activating…') : translate('Activate account')}</Button>
         <div className="mt-4 text-center">
-          <Link to="/login" className="text-sm font-medium text-orange-700 hover:underline">Already have an account? Sign in</Link>
+          <Link to="/login" className="text-sm font-medium text-orange-700 hover:underline">{translate("Already have an account? Sign in")}</Link>
         </div>
       </form>
     </AuthLayout>

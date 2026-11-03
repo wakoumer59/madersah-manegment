@@ -1,3 +1,4 @@
+import { translate  } from '@/i18n';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Calendar, User } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
@@ -72,7 +73,7 @@ export default function AttendancePage() {
         entries[uid] = { status, note: notes[uid] ?? '', markedBy: authUser?.uid ?? '', updatedAt: now };
       }
       await saveDayAttendance({ institutionId, classId: selectedClassId, date, entries, markedBy: authUser?.uid ?? '' });
-      toast.success('Attendance saved.');
+      toast.success(translate("Attendance saved."));
     } catch (err) { setError(errorMessage(err)); } finally { setSaving(false); }
   };
 
@@ -89,7 +90,7 @@ export default function AttendancePage() {
       <AppShell variant="admin">
         <div role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
           {error}{' '}
-          <button type="button" onClick={() => void load()} className="font-medium underline ml-2">Retry</button>
+          <button type="button" onClick={() => void load()} className="font-medium underline ml-2">{translate("Retry")}</button>
         </div>
       </AppShell>
     );
@@ -101,33 +102,33 @@ export default function AttendancePage() {
     <AppShell variant="admin">
       <div className="mb-5 flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Take Attendance</h1>
+          <h1 className="text-2xl font-bold text-slate-900">{translate("Take Attendance")}</h1>
           <p className="text-sm text-slate-500">
-            Mark attendance for {selectedClass?.name ?? 'a class'} on {formatDisplayDate(date)}
+            {translate("Mark attendance for")}{' '}{selectedClass?.name ?? translate('a class')} {' '}{translate("on")}{' '}{formatDisplayDate(date)}
           </p>
         </div>
       </div>
       {!selectedClassId && (
-        <EmptyState icon={<Calendar className="h-10 w-10" />} title="Select a class" description="Choose a class from the dropdown to begin marking attendance." />
+        <EmptyState icon={<Calendar className="h-10 w-10" />} title={translate("Select a class")} description={translate("Choose a class from the dropdown to begin marking attendance.")} />
       )}
       {selectedClassId && (
         <>
           <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-3">
-              <label className="text-sm text-slate-600">Class</label>
-              <Select label="Class" value={selectedClassId} onChange={(e) => setSelectedClassId(e.target.value)}>
-                <option value="">Select a class</option>
+              <label className="text-sm text-slate-600">{translate("Class")}</label>
+              <Select label={translate("Class")} value={selectedClassId} onChange={(e) => setSelectedClassId(e.target.value)}>
+                <option value="">{translate("Select a class")}</option>
                 {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </Select>
             </div>
             <div className="flex items-center gap-3">
-              <label className="text-sm text-slate-600">Date</label>
+              <label className="text-sm text-slate-600">{translate("Date")}</label>
               <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="px-3 py-2 text-sm border border-slate-300 rounded-md bg-white focus:ring-2 focus:ring-orange-500 focus:border-transparent" />
-              <Button variant="secondary" onClick={() => setDate(todayIso())}>Today</Button>
+              <Button variant="secondary" onClick={() => setDate(todayIso())}>{translate("Today")}</Button>
             </div>
           </div>
           {classStudents.length === 0 ? (
-            <EmptyState icon={<User className="h-10 w-10" />} title="No students in this class" description="Enrol students first, then return here to mark attendance." />
+            <EmptyState icon={<User className="h-10 w-10" />} title={translate("No students in this class")} description={translate("Enrol students first, then return here to mark attendance.")} />
           ) : (
             <>
               <form onSubmit={handleSave} className="space-y-2">
@@ -135,9 +136,9 @@ export default function AttendancePage() {
                   <table className="w-full text-left border-b border-slate-100">
                     <thead>
                       <tr className="bg-slate-50">
-                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400">Student</th>
-                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 text-center">Status</th>
-                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400">Notes</th>
+                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400">{translate("Student")}</th>
+                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 text-center">{translate("Status")}</th>
+                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400">{translate("Notes")}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
@@ -145,26 +146,26 @@ export default function AttendancePage() {
                         <tr key={s.uid} className="hover:bg-slate-50">
                           <td className="px-4 py-3 text-sm text-slate-700">
                             <div className="font-medium">{s.displayName}</div>
-                            <div className="text-xs text-slate-500">{s.email} \u00b7 {s.admissionNo}</div>
+                            <div className="text-xs text-slate-500">{s.email} {' '}{translate("\\u00b7")}{' '}{s.admissionNo}</div>
                           </td>
                           <td className="px-4 py-3 text-center">
                             <div className="flex justify-center gap-1">
                               {(['present', 'late', 'excused', 'absent'] as AttendanceStatus[]).map((st) => (
-                                <button key={st} type="button" onClick={() => toggleStatus(s.uid)} className={`px-2 py-1 text-xs rounded border transition-colors ${statuses[s.uid] === st ? STATUS_TONE[st] + ' border-transparent font-medium' : 'border-slate-200 text-slate-500 hover:bg-slate-100'}`}>{STATUS_LABEL[st]}</button>
+                                <button key={st} type="button" onClick={() => toggleStatus(s.uid)} className={`px-2 py-1 text-xs rounded border transition-colors ${statuses[s.uid] === st ? STATUS_TONE[st] + ' border-transparent font-medium' : 'border-slate-200 text-slate-500 hover:bg-slate-100'}`}                                >{translate(STATUS_LABEL[st])}</button>
                               ))}
                             </div>
                           </td>
                           <td className="px-4 py-3">
-                            <input type="text" placeholder="Note…" value={notes[s.uid] ?? ''} onChange={(e) => setNotes((prev) => ({ ...prev, [s.uid]: e.target.value }))} className="w-full px-3 py-2 text-sm border border-slate-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent" />
+                            <input type="text" placeholder={translate("Note…")} value={notes[s.uid] ?? ''} onChange={(e) => setNotes((prev) => ({ ...prev, [s.uid]: e.target.value }))} className="w-full px-3 py-2 text-sm border border-slate-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent" />
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-                <p className="mt-2 text-xs text-slate-500">Tap a status to cycle: Present → Late → Excused → Absent.</p>
+                <p className="mt-2 text-xs text-slate-500">{translate("Tap a status to cycle: Present → Late → Excused → Absent.")}</p>
                 <div className="mt-4 flex justify-end">
-                  <Button type="submit" loading={saving} className="w-full sm:w-auto">{saving ? 'Saving…' : 'Save attendance'}</Button>
+                  <Button type="submit" loading={saving} className="w-full sm:w-auto">{saving ? translate('Saving…') : translate('Save attendance')}</Button>
                 </div>
               </form>
             </>

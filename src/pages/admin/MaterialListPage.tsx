@@ -1,3 +1,4 @@
+import { translate  } from '@/i18n';
 import { useCallback, useEffect, useState } from 'react';
 import { Plus, FileText } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
@@ -85,7 +86,7 @@ export default function AdminMaterialListPage() {
       setFiles([]);
       setForm({ title: '', description: '', classId: '', subjectId: '', visibility: 'institution' });
       setFieldErrors({});
-      toast.success(`Material${files.length > 1 ? 's' : ''} uploaded.`);
+      toast.success(translate(files.length > 1 ? 'Materials uploaded.' : 'Material uploaded.'));
       void load();
     } catch (err) { setError(errorMessage(err)); } finally { setUploading(false); }
   };
@@ -95,7 +96,7 @@ export default function AdminMaterialListPage() {
     try {
       await deleteMaterial(institutionId, material.id);
       setOpenDelete(null);
-      toast.success('Material deleted.');
+      toast.success(translate("Material deleted."));
       void load();
     } catch (err) { setError(errorMessage(err)); } finally { setDeleting(null); }
   };
@@ -104,7 +105,7 @@ export default function AdminMaterialListPage() {
     return (
       <AppShell variant="admin">
         <div role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error} <button type="button" onClick={() => void load()} className="font-medium underline ml-2">Retry</button>
+          {error} <button type="button" onClick={() => void load()} className="font-medium underline ml-2">{translate("Retry")}</button>
         </div>
       </AppShell>
     );
@@ -114,30 +115,36 @@ export default function AdminMaterialListPage() {
     <AppShell variant="admin">
       <div className="mb-5 flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Learning Materials</h1>
-          <p className="text-sm text-slate-500">Upload and manage class materials and resources.</p>
+          <h1 className="text-2xl font-bold text-slate-900">{translate("Learning Materials")}</h1>
+          <p className="text-sm text-slate-500">{translate("Upload and manage class materials and resources.")}</p>
         </div>
-        <Button onClick={() => setOpenForm(true)}><Plus className="h-4 w-4" /> Upload material</Button>
+        <Button onClick={() => setOpenForm(true)}><Plus className="h-4 w-4" /> {' '}{translate("Upload material")}</Button>
       </div>
 
       {!loading && !error && materials.length === 0 && (
-        <EmptyState icon={<FileText className="h-10 w-10" />} title="No materials yet" description="Upload your first learning material." action={<Button onClick={() => setOpenForm(true)}>Upload material</Button>} />
+        <EmptyState icon={<FileText className="h-10 w-10" />} title={translate("No materials yet")} description={translate("Upload your first learning material.")} />
       )}
 
       {!loading && !error && materials.length > 0 && (
         <div className="space-y-4">
           <DataTable<Material>
             columns={[
-              { key: 'title', label: 'Title' },
-              { key: 'fileName', label: 'File', render: (m) => m.fileName },
-              { key: 'contentType', label: 'Type', render: (m) => m.contentType.split('/').pop()?.toUpperCase() || '' },
-              { key: 'size', label: 'Size', render: (m) => `${(m.size / 1024 / 1024).toFixed(2)} MB` },
-              { key: 'visibility', label: 'Visibility', render: (m) => <span className={`px-2 py-1 rounded text-xs font-medium ${m.visibility === 'class' ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700'}`}>{m.visibility}</span> },
+              { key: 'title', label: translate("Title") },
+              { key: 'fileName', label: translate("File"), render: (m) => m.fileName },
+              { key: 'contentType', label: translate("Type"), render: (m) => m.contentType.split('/').pop()?.toUpperCase() || '' },
+              { key: 'size', label: translate("Size"), render: (m) => `${(m.size / 1024 / 1024).toFixed(2)} MB` },
+              { key: 'visibility', label: translate("Visibility"), render: (m) => <span className={`px-2 py-1 rounded text-xs font-medium ${m.visibility === 'class' ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700'}`}>{translate(m.visibility)}</span> },
               {
                 key: 'actions', label: '',
                 render: (m) => (
                   <div className="flex gap-2">
-                    <Button variant="danger" onClick={() => setOpenDelete(m)}>Delete</Button>
+                    <Button
+                      variant="danger"
+                      onClick={() => setOpenDelete(m)}
+                      disabled={m.uploadedBy !== userRecord?.uid}
+                      title={m.uploadedBy !== userRecord?.uid ? translate('Only the uploader can delete this file.') : undefined}
+                    >
+                      {translate("Delete")}{' '}</Button>
                   </div>
                 ),
               },
@@ -146,50 +153,50 @@ export default function AdminMaterialListPage() {
           />
           {hasMore && (
             <div className="flex justify-center">
-              <Button variant="secondary" onClick={() => setCursor((c) => c ?? '')} className="w-full sm:w-auto">Load more</Button>
+              <Button variant="secondary" onClick={() => setCursor((c) => c ?? '')} className="w-full sm:w-auto">{translate("Load more")}</Button>
             </div>
           )}
         </div>
       )}
 
-      <Modal open={openForm} title="Upload material" onClose={() => setOpenForm(false)} busy={uploading}>
+      <Modal open={openForm} title={translate("Upload material")} onClose={() => setOpenForm(false)} busy={uploading}>
         <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} noValidate className="flex flex-col gap-4">
           {error && <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
-          <FormInput label="Title" required value={form.title} error={fieldErrors.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-          <FormInput label="Description" value={form.description} error={fieldErrors.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-          <Select label="Class (optional)" value={form.classId} onChange={(e) => setForm({ ...form, classId: e.target.value })}>
-            <option value="">All classes</option>
+          <FormInput label={translate("Title")} required value={form.title} error={fieldErrors.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+          <FormInput label={translate("Description")} value={form.description} error={fieldErrors.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+          <Select label={translate("Class (optional)")} value={form.classId} onChange={(e) => setForm({ ...form, classId: e.target.value })}>
+            <option value="">{translate("All classes")}</option>
             {classOptions.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </Select>
-          <Select label="Subject (optional)" value={form.subjectId} onChange={(e) => setForm({ ...form, subjectId: e.target.value })}>
-            <option value="">All subjects</option>
+          <Select label={translate("Subject (optional)")} value={form.subjectId} onChange={(e) => setForm({ ...form, subjectId: e.target.value })}>
+            <option value="">{translate("All subjects")}</option>
             {subjectOptions.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </Select>
-          <Select label="Visibility" required value={form.visibility} onChange={(e) => setForm({ ...form, visibility: e.target.value as 'class' | 'institution' })}>
-            <option value="institution">Institution-wide</option>
-            <option value="class">Specific class</option>
+          <Select label={translate("Visibility")} required value={form.visibility} onChange={(e) => setForm({ ...form, visibility: e.target.value as 'class' | 'institution' })}>
+            <option value="institution">{translate("Institution-wide")}</option>
+            <option value="class">{translate("Specific class")}</option>
           </Select>
           <FileDropzone onFiles={handleFiles} disabled={uploading} />
           {files.length > 0 && (
             <div className="bg-slate-50 rounded-lg p-3">
-              <p className="text-xs text-slate-500 mb-2">Selected files:</p>
+              <p className="text-xs text-slate-500 mb-2">{translate("Selected files:")}</p>
               <ul className="text-sm text-slate-700 space-y-1">
-                {files.map((f) => <li key={f.name}>{f.name} ({(f.size / 1024 / 1024).toFixed(2)} MB)</li>)}
+                {files.map((f) => <li key={f.name}>{f.name} ({(f.size / 1024 / 1024).toFixed(2)} {' '}{translate("MB)")}</li>)}
               </ul>
             </div>
           )}
           <div className="mt-4 flex justify-end gap-3">
-            <Button variant="secondary" onClick={() => setOpenForm(false)} disabled={uploading}>Cancel</Button>
-            <Button type="submit" loading={uploading} disabled={uploading || !files.length}>Upload</Button>
+            <Button variant="secondary" onClick={() => setOpenForm(false)} disabled={uploading}>{translate("Cancel")}</Button>
+            <Button type="submit" loading={uploading} disabled={uploading || !files.length}>{translate("Upload")}</Button>
           </div>
         </form>
       </Modal>
 
       <ConfirmDialog
         open={openDelete !== null}
-        title="Delete material"
-        message={openDelete ? `Remove “${openDelete.title}”? This cannot be undone.` : ''}
-        confirmLabel="Delete"
+        title={translate("Delete material")}
+        message={openDelete ? translate('Remove “{name}”? This cannot be undone.', { name: openDelete.title }) : ''}
+        confirmLabel={translate("Delete")}
         danger
         busy={deleting === openDelete}
         onConfirm={() => { if (openDelete) handleDelete(openDelete); }}

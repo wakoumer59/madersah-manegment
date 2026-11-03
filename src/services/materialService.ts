@@ -65,7 +65,7 @@ export async function createMaterial(input: {
 
   const id = push(child(ref(getDb()), `${input.institutionId}/materials`)).key;
   if (!id) throw new Error('Could not generate a material id.');
-  const storagePath = `materials/${input.institutionId}/${id}/${input.file.name}`;
+  const storagePath = `materials/${input.uploadedBy}/${input.institutionId}/${id}/${input.file.name}`;
   const storage = getFirebaseStorage();
   const fileRef = storageRef(storage, storagePath);
 
@@ -145,7 +145,7 @@ export async function deleteMaterial(
   if (material) {
     const storage = getFirebaseStorage();
     const fileRef = storageRef(storage, material.storagePath);
-    await deleteObject(fileRef).catch(() => { /* best effort */ });
+    await deleteObject(fileRef);
   }
   await remove(ref(getDb(), `${institutionId}/materials/${materialId}`));
 }
@@ -160,7 +160,7 @@ export async function replaceMaterial(
   if (!material) throw new Error('Material not found.');
 
   const storage = getFirebaseStorage();
-  const storagePath = `materials/${institutionId}/${materialId}/${file.name}`;
+  const storagePath = `materials/${uploadedBy}/${institutionId}/${materialId}/${file.name}`;
   const fileRef = storageRef(storage, storagePath);
 
   await new Promise<void>((resolve, reject) => {
@@ -170,12 +170,6 @@ export async function replaceMaterial(
 
   const downloadUrl = await getDownloadURL(fileRef);
 
-  // Delete old file
-  if (material.storagePath) {
-    const oldRef = storageRef(storage, material.storagePath);
-    await deleteObject(oldRef).catch(() => { /* best effort */ });
-  }
-
   await update(ref(getDb(), `${institutionId}/materials/${materialId}`), {
     title: material.title, description: material.description,
     classId: material.classId, subjectId: material.subjectId,
@@ -184,6 +178,10 @@ export async function replaceMaterial(
     storagePath, downloadUrl, uploadedBy, createdAt: material.createdAt,
     downloadCount: material.downloadCount,
   });
+
+  if (material.storagePath && material.storagePath !== storagePath) {
+    await deleteObject(storageRef(storage, material.storagePath));
+  }
 
   return {
     ...material,

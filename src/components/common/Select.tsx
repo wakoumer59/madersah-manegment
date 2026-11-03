@@ -1,4 +1,5 @@
 import { useId, type ReactNode, type SelectHTMLAttributes } from 'react';
+import { translate } from '@/i18n';
 
 interface SelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'id'> {
   label: string;
@@ -27,7 +28,7 @@ export function Select({ label, error, children, className = '', ...rest }: Sele
       </select>
       {error && (
         <p role="alert" className="mt-1 text-sm text-red-600">
-          {error}
+          {translate(error)}
         </p>
       )}
     </div>

@@ -1,4 +1,5 @@
-﻿import { useCallback, useEffect, useState, type FormEvent } from 'react';
+﻿import { translate  } from '@/i18n';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
@@ -77,7 +78,7 @@ export default function RegisterInstitutionPage() {
         uid: authUser.uid,
         displayName: userRecord.displayName,
       });
-      toast.success('Registration request submitted. The platform owner will review it.');
+      toast.success(translate("Registration request submitted. The platform owner will review it."));
       await loadRequest();
     } catch (error) {
       setFormError(errorMessage(error));
@@ -91,10 +92,9 @@ export default function RegisterInstitutionPage() {
       <div className="mx-auto max-w-2xl">
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-semibold text-slate-900">Register your madrasah</h1>
+            <h1 className="text-xl font-semibold text-slate-900">{translate("Register your madrasah")}</h1>
             <p className="text-sm text-slate-500">
-              Submit your institution for review by the platform owner.
-            </p>
+              {translate("Submit your institution for review by the platform owner.")}{' '}</p>
           </div>
           <Button
             variant="secondary"
@@ -103,36 +103,31 @@ export default function RegisterInstitutionPage() {
               navigate('/login');
             }}
           >
-            Sign out
-          </Button>
+            {translate("Sign out")}{' '}</Button>
         </div>
 
         {request && request.status === 'pending' && (
           <Card className="mb-4 border-amber-200 bg-amber-50">
             <p className="text-sm font-medium text-amber-900">
-              Your request is awaiting review by the platform owner.
-            </p>
+              {translate("Your request is awaiting review by the platform owner.")}{' '}</p>
             <p className="mt-1 text-sm text-amber-800">
-              Submitted for â€œ{request.institutionName}â€. You will get access automatically once
-              it is approved.
-            </p>
+              {translate('Submitted for')} “{request.institutionName}”. {translate('You will get access automatically once it is approved.')}{' '}</p>
           </Card>
         )}
         {request && request.status === 'rejected' && (
           <Card className="mb-4 border-red-200 bg-red-50">
-            <p className="text-sm font-medium text-red-900">Your previous request was rejected.</p>
+            <p className="text-sm font-medium text-red-900">{translate("Your previous request was rejected.")}</p>
             {request.reviewNote && (
-              <p className="mt-1 text-sm text-red-800">Reason: {request.reviewNote}</p>
+              <p className="mt-1 text-sm text-red-800">{translate("Reason:")}{' '}{request.reviewNote}</p>
             )}
             <p className="mt-1 text-sm text-red-800">
-              Fix the information below and submit again.
-            </p>
+              {translate("Fix the information below and submit again.")}{' '}</p>
           </Card>
         )}
 
         <Card>
           {loading ? (
-            <p className="text-sm text-slate-500">Loadingâ€¦</p>
+            <p className="text-sm text-slate-500">{translate('Loading…')}</p>
           ) : (
             <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
               {formError && (
@@ -144,7 +139,7 @@ export default function RegisterInstitutionPage() {
                 </div>
               )}
               <FormInput
-                label="Madrasah name"
+                label={translate("Madrasah name")}
                 required
                 disabled={!canEdit}
                 value={values.institutionName}
@@ -152,7 +147,7 @@ export default function RegisterInstitutionPage() {
                 onChange={(e) => setValues((v) => ({ ...v, institutionName: e.target.value }))}
               />
               <FormInput
-                label="Contact email"
+                label={translate("Contact email")}
                 type="email"
                 inputMode="email"
                 required
@@ -162,7 +157,7 @@ export default function RegisterInstitutionPage() {
                 onChange={(e) => setValues((v) => ({ ...v, contactEmail: e.target.value }))}
               />
               <FormInput
-                label="Phone number"
+                label={translate("Phone number")}
                 type="tel"
                 inputMode="tel"
                 required
@@ -172,7 +167,7 @@ export default function RegisterInstitutionPage() {
                 onChange={(e) => setValues((v) => ({ ...v, phone: e.target.value }))}
               />
               <FormInput
-                label="Address"
+                label={translate("Address")}
                 required
                 disabled={!canEdit}
                 value={values.address}
@@ -181,7 +176,7 @@ export default function RegisterInstitutionPage() {
               />
               {canEdit && (
                 <Button type="submit" loading={submitting} className="w-full">
-                  {request?.status === 'rejected' ? 'Re-submit request' : 'Submit request'}
+                  {request?.status === 'rejected' ? translate('Re-submit request') : translate('Submit request')}
                 </Button>
               )}
             </form>
@@ -191,4 +186,3 @@ export default function RegisterInstitutionPage() {
     </div>
   );
 }
-

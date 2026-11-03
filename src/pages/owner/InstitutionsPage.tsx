@@ -1,3 +1,4 @@
+import { translate  } from '@/i18n';
 import { useCallback, useEffect, useState } from 'react';
 import { AppShell } from '@/components/layout/AppShell';
 import { Button } from '@/components/common/Button';
@@ -78,10 +79,9 @@ export default function InstitutionsPage() {
 
   return (
     <AppShell variant="owner">
-      <h1 className="text-xl font-semibold text-slate-900">Institutions</h1>
+      <h1 className="text-xl font-semibold text-slate-900">{translate("Institutions")}</h1>
       <p className="mb-4 text-sm text-slate-500">
-        All approved madrasahs on the platform.
-      </p>
+        {translate("All approved madrasahs on the platform.")}{' '}</p>
 
       {loading && <LoadingSpinner fullPage />}
       {!loading && error && (
@@ -91,14 +91,13 @@ export default function InstitutionsPage() {
         >
           {error}{' '}
           <button type="button" onClick={() => void load()} className="font-medium underline">
-            Retry
-          </button>
+            {translate("Retry")}{' '}</button>
         </div>
       )}
       {!loading && !error && items.length === 0 && (
         <EmptyState
-          title="No institutions yet"
-          description="Approved registration requests will show up here."
+          title={translate("No institutions yet")}
+          description={translate("Approved registration requests will show up here.")}
         />
       )}
 
@@ -114,7 +113,7 @@ export default function InstitutionsPage() {
               <span
                 className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${STATUS_STYLES[institution.status] ?? 'bg-slate-50 text-slate-600 border-slate-200'}`}
               >
-                {institution.status}
+                {translate(institution.status)}
               </span>
             </div>
             <div className="mt-3">
@@ -122,7 +121,7 @@ export default function InstitutionsPage() {
                 variant={institution.status === 'active' ? 'danger' : 'secondary'}
                 onClick={() => setToggling(institution)}
               >
-                {institution.status === 'active' ? 'Suspend' : 'Reactivate'}
+                {institution.status === 'active' ? translate('Suspend') : translate('Reactivate')}
               </Button>
             </div>
           </Card>
@@ -132,20 +131,19 @@ export default function InstitutionsPage() {
       {cursor && (
         <div className="mt-4 flex justify-center">
           <Button variant="secondary" onClick={() => void loadMore()} loading={loadingMore}>
-            Load more
-          </Button>
+            {translate("Load more")}{' '}</Button>
         </div>
       )}
 
       <ConfirmDialog
         open={toggling !== null}
-        title={toggling?.status === 'active' ? 'Suspend institution' : 'Reactivate institution'}
+        title={toggling?.status === 'active' ? translate('Suspend institution') : translate('Reactivate institution')}
         message={
           toggling?.status === 'active'
-            ? `Suspend “${toggling.name}”? Its staff will no longer be able to write attendance, tests, or materials until it is reactivated.`
-            : `Reactivate “${toggling?.name}”? Its staff regains write access.`
+            ? translate('Suspend “{name}”? Its staff will no longer be able to write attendance, tests, or materials until it is reactivated.', { name: toggling.name })
+            : translate('Reactivate “{name}”? Its staff regains write access.', { name: toggling?.name ?? '' })
         }
-        confirmLabel={toggling?.status === 'active' ? 'Suspend' : 'Reactivate'}
+        confirmLabel={toggling?.status === 'active' ? translate('Suspend') : translate('Reactivate')}
         danger={toggling?.status === 'active'}
         busy={busy}
         onConfirm={handleToggle}

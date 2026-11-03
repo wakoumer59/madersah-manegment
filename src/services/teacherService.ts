@@ -1,9 +1,10 @@
 // Teacher service — /{institutionId}/teachers/{uid} plus /users/{uid} linkage.
 import {
-  get, limitToFirst, orderByChild, query, ref, serverTimestamp,
-  set, startAfter,
+  get, limitToFirst, orderByChild, query, ref, set, startAfter, update,
 } from 'firebase/database';
 import { getDb } from '@/firebase/init';
+import { deleteManagedAccount } from '@/services/adminAccountService';
+import { createPendingAccountCode } from '@/services/pendingAccountService';
 import type { Teacher, UserRecord } from '@/types';
 
 function toTeacher(uid: string, value: Record<string, unknown>): Teacher {
@@ -15,15 +16,15 @@ function toTeacher(uid: string, value: Record<string, unknown>): Teacher {
 }
 
 export async function createTeacher(input: {
-  institutionId: string; uid: string; displayName: string; email: string;
-}): Promise<void> {
-  const instId = input.institutionId;
-  await set(ref(getDb(), `${instId}/teachers/${input.uid}`), {
-    uid: input.uid, displayName: input.displayName.trim(),
-    email: input.email.trim().toLowerCase(), status: 'active',
-    createdAt: serverTimestamp(),
+  institutionId: string; displayName: string; email: string; createdBy: string;
+}): Promise<string> {
+  return createPendingAccountCode({
+    institutionId: input.institutionId,
+    displayName: input.displayName,
+    email: input.email,
+    role: 'teacher',
+    createdBy: input.createdBy,
   });
-  await set(ref(getDb(), `users/${input.uid}/status`), 'active');
 }
 
 export async function listTeachersPaged(
@@ -55,9 +56,22 @@ export async function setTeacherStatus(
   await set(ref(getDb(), `users/${uid}/status`), status);
 }
 
-export async function deleteTeacher(institutionId: string, uid: string): Promise<void> {
-  await set(ref(getDb(), `${institutionId}/teachers/${uid}`), null);
-  await set(ref(getDb(), `users/${uid}`), null);
+export async function updateTeacher(
+  institutionId: string, teacher: Teacher, displayName: string,
+): Promise<void> {
+  const normalizedName = displayName.trim();
+  await update(ref(getDb()), {
+    [`${institutionId}/teachers/${teacher.uid}/displayName`]: normalizedName,
+    [`users/${teacher.uid}/displayName`]: normalizedName,
+  });
+}
+
+export async function deleteTeacher(uid: string, idToken: string): Promise<void> {
+  await deleteManagedAccount({
+    idToken,
+    uid,
+    role: 'teacher',
+  });
 }
 
 export async function getTeacher(institutionId: string, uid: string): Promise<Teacher | null> {

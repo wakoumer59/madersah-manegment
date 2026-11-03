@@ -1,3 +1,4 @@
+import { translate  } from '@/i18n';
 import { useCallback, useEffect, useState } from 'react';
 import { AppShell } from '@/components/layout/AppShell';
 import { Button } from '@/components/common/Button';
@@ -48,7 +49,7 @@ export default function InstitutionRequestsPage() {
     setBusy(true);
     try {
       await approveInstitutionRequest(approving, authUser.uid);
-      toast.success(`“${approving.institutionName}” approved — requester is now an administrator.`);
+      toast.success(translate('“{name}” approved — requester is now an administrator.', { name: approving.institutionName }));
       setApproving(null);
       await load();
     } catch (err) {
@@ -63,7 +64,7 @@ export default function InstitutionRequestsPage() {
     setBusy(true);
     try {
       await rejectInstitutionRequest(rejecting, authUser.uid, rejectNote);
-      toast.success(`Request from “${rejecting.institutionName}” rejected.`);
+      toast.success(translate('Request from “{name}” rejected.', { name: rejecting.institutionName }));
       setRejecting(null);
       setRejectNote('');
       await load();
@@ -76,11 +77,9 @@ export default function InstitutionRequestsPage() {
 
   return (
     <AppShell variant="owner">
-      <h1 className="text-xl font-semibold text-slate-900">Institution Requests</h1>
+      <h1 className="text-xl font-semibold text-slate-900">{translate("Institution Requests")}</h1>
       <p className="mb-4 text-sm text-slate-500">
-        Approving creates the institution and promotes the requester to its administrator — in
-        one atomic step.
-      </p>
+        {translate("Approving creates the institution and promotes the requester to its administrator — in one atomic step.")}{' '}</p>
 
       {loading && <LoadingSpinner fullPage />}
       {!loading && error && (
@@ -90,14 +89,13 @@ export default function InstitutionRequestsPage() {
         >
           {error}{' '}
           <button type="button" onClick={() => void load()} className="font-medium underline">
-            Retry
-          </button>
+            {translate("Retry")}{' '}</button>
         </div>
       )}
       {!loading && !error && requests.length === 0 && (
         <EmptyState
-          title="No pending requests"
-          description="New madrasah registration requests will appear here for review."
+          title={translate("No pending requests")}
+          description={translate("New madrasah registration requests will appear here for review.")}
         />
       )}
 
@@ -107,16 +105,15 @@ export default function InstitutionRequestsPage() {
             <div className="flex flex-col gap-1">
               <p className="font-semibold text-slate-900">{request.institutionName}</p>
               <p className="text-sm text-slate-600">
-                Requested by {request.requesterName || '—'} ({request.contactEmail})
+                {translate("Requested by")}{' '}{request.requesterName || '—'} ({request.contactEmail})
               </p>
-              <p className="text-sm text-slate-600">Phone: {request.phone}</p>
-              <p className="text-sm text-slate-600">Address: {request.address}</p>
+              <p className="text-sm text-slate-600">{translate("Phone:")}{' '}{request.phone}</p>
+              <p className="text-sm text-slate-600">{translate("Address:")}{' '}{request.address}</p>
             </div>
             <div className="mt-4 flex gap-3">
-              <Button onClick={() => setApproving(request)}>Approve</Button>
+              <Button onClick={() => setApproving(request)}>{translate("Approve")}</Button>
               <Button variant="danger" onClick={() => setRejecting(request)}>
-                Reject
-              </Button>
+                {translate("Reject")}{' '}</Button>
             </div>
           </Card>
         ))}
@@ -124,13 +121,13 @@ export default function InstitutionRequestsPage() {
 
       <ConfirmDialog
         open={approving !== null}
-        title="Approve institution"
+        title={translate("Approve institution")}
         message={
           approving
             ? `Approve “${approving.institutionName}”? ${approving.requesterName} will become its administrator and gain full access to that institution's data only.`
             : ''
         }
-        confirmLabel="Approve"
+        confirmLabel={translate("Approve")}
         busy={busy}
         onConfirm={handleApprove}
         onCancel={() => setApproving(null)}
@@ -138,27 +135,24 @@ export default function InstitutionRequestsPage() {
 
       <Modal
         open={rejecting !== null}
-        title="Reject request"
+        title={translate("Reject request")}
         onClose={() => setRejecting(null)}
         busy={busy}
       >
         <p className="text-sm text-slate-600">
-          Tell the requester what to fix. They can correct the information and re-submit.
-        </p>
+          {translate("Tell the requester what to fix. They can correct the information and re-submit.")}{' '}</p>
         <textarea
           value={rejectNote}
           onChange={(event) => setRejectNote(event.target.value)}
           rows={3}
-          placeholder="e.g. The contact email could not be verified."
+          placeholder={translate("e.g. The contact email could not be verified.")}
           className="mt-3 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
         />
         <div className="mt-4 flex justify-end gap-3">
           <Button variant="secondary" onClick={() => setRejecting(null)} disabled={busy}>
-            Cancel
-          </Button>
+            {translate("Cancel")}{' '}</Button>
           <Button variant="danger" onClick={handleReject} loading={busy}>
-            Reject request
-          </Button>
+            {translate("Reject request")}{' '}</Button>
         </div>
       </Modal>
     </AppShell>

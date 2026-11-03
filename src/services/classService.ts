@@ -1,7 +1,7 @@
 // Class service — /{institutionId}/classes/{id}.
 import {
-  child, get, limitToFirst, orderByChild, push, query, ref, remove, runTransaction,
-  serverTimestamp, set, startAfter,
+  child, get, limitToFirst, orderByChild, push, query, ref, runTransaction,
+  serverTimestamp, set, startAfter, update,
 } from 'firebase/database';
 import { getDb } from '@/firebase/init';
 import type { SchoolClass } from '@/types';
@@ -57,7 +57,18 @@ export async function assignClassTeacher(
 }
 
 export async function deleteClass(institutionId: string, classId: string): Promise<void> {
-  await remove(ref(getDb(), `${institutionId}/classes/${classId}`));
+  const db = getDb();
+  const students = await get(ref(db, `${institutionId}/students`));
+  const updates: Record<string, unknown> = {
+    [`${institutionId}/classes/${classId}`]: null,
+  };
+  students.forEach((studentSnapshot) => {
+    const student = studentSnapshot.val() as Record<string, unknown>;
+    if (student.classId !== classId) return;
+    updates[`${institutionId}/students/${studentSnapshot.key}/classId`] = null;
+    updates[`users/${studentSnapshot.key}/classId`] = null;
+  });
+  await update(ref(db), updates);
 }
 
 export async function getClass(institutionId: string, classId: string): Promise<SchoolClass | null> {

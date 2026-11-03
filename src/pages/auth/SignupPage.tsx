@@ -1,4 +1,5 @@
-﻿import { useState, type FormEvent } from 'react';
+﻿import { translate  } from '@/i18n';
+import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthLayout } from '@/components/layout/AuthLayout';
 import { Button } from '@/components/common/Button';
@@ -46,7 +47,7 @@ export default function SignupPage() {
   return (
     <AuthLayout
       title={strings.auth.createAccount}
-      subtitle="Create your account to register a madrasah or activate an invitation."
+      subtitle={translate("Create your account to register a madrasah or activate an invitation.")}
       footer={
         <>
           <span>{strings.auth.haveAccount} </span>
@@ -88,7 +89,7 @@ export default function SignupPage() {
           type="password"
           autoComplete="new-password"
           required
-          hint="At least 8 characters."
+          hint={translate("At least 8 characters.")}
           value={values.password}
           error={fieldErrors.password}
           onChange={update('password')}

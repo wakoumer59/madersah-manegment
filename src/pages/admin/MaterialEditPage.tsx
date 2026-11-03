@@ -1,3 +1,4 @@
+import { translate  } from '@/i18n';
 import { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, FileText } from 'lucide-react';
@@ -97,7 +98,7 @@ export default function AdminMaterialEditPage() {
       }
       setOpenForm(false);
       setFiles([]);
-      toast.success('Material replaced.');
+      toast.success(translate("Material replaced."));
       void load();
     } catch (err) {
       setError(errorMessage(err));
@@ -110,10 +111,9 @@ export default function AdminMaterialEditPage() {
     return (
       <AppShell variant="admin">
         <div role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error || 'Material not found'}
+          {error || translate('Material not found')}
           <button type="button" onClick={() => navigate(-1)} className="font-medium underline ml-2">
-            Back
-          </button>
+            {translate("Back")}{' '}</button>
         </div>
       </AppShell>
     );
@@ -124,12 +124,11 @@ export default function AdminMaterialEditPage() {
       <div className="mb-5 flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">{material.title}</h1>
-          <p className="text-sm text-slate-500">Replace or update this material.</p>
+          <p className="text-sm text-slate-500">{translate("Replace or update this material.")}</p>
         </div>
         <Button variant="secondary" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
-        </Button>
+          {translate("Back")}{' '}</Button>
       </div>
 
       <div className="rounded-xl border border-slate-200 bg-white p-6">
@@ -138,73 +137,77 @@ export default function AdminMaterialEditPage() {
           <div>
             <p className="text-sm font-medium text-slate-900">{material.fileName}</p>
             <p className="text-xs text-slate-500">
-              {material.contentType} • {(material.size / 1024 / 1024).toFixed(2)} MB
-            </p>
+              {material.contentType} • {(material.size / 1024 / 1024).toFixed(2)} {' '}{translate("MB")}{' '}</p>
           </div>
         </div>
 
-        <Button onClick={() => setOpenForm(true)}>
+        <Button
+          onClick={() => setOpenForm(true)}
+          disabled={material.uploadedBy !== userRecord?.uid}
+          title={material.uploadedBy !== userRecord?.uid ? translate('Only the uploader can replace this file.') : undefined}
+        >
           <FileText className="h-4 w-4 mr-2" />
-          Replace file
-        </Button>
+          {translate("Replace file")}{' '}</Button>
+        {material.uploadedBy !== userRecord?.uid && (
+          <p role="status" className="mt-3 text-sm text-slate-500">
+            {translate("Only the original uploader can replace or delete this file.")}{' '}</p>
+        )}
 
         <div className="mt-6 grid grid-cols-2 gap-4">
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase mb-1">Visibility</p>
+            <p className="text-xs font-semibold text-slate-400 uppercase mb-1">{translate("Visibility")}</p>
             <p className={`text-sm font-medium ${material.visibility === 'class' ? 'text-amber-700' : 'text-indigo-700'}`}>
-              {material.visibility}
+              {translate(material.visibility)}
             </p>
           </div>
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase mb-1">Uploaded by</p>
+            <p className="text-xs font-semibold text-slate-400 uppercase mb-1">{translate("Uploaded by")}</p>
             <p className="text-sm font-medium text-slate-900">{material.uploadedBy}</p>
           </div>
         </div>
       </div>
 
-      <Modal open={openForm} title="Replace material file" onClose={() => setOpenForm(false)} busy={replacing}>
+      <Modal open={openForm} title={translate("Replace material file")} onClose={() => setOpenForm(false)} busy={replacing}>
         <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} noValidate className="flex flex-col gap-4">
           {error && (
             <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
               {error}
             </div>
           )}
-          <FormInput label="Title" required value={form.title} error={fieldErrors.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-          <FormInput label="Description" value={form.description} error={fieldErrors.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-          <Select label="Class (optional)" value={form.classId} onChange={(e) => setForm({ ...form, classId: e.target.value })}>
-            <option value="">All classes</option>
+          <FormInput label={translate("Title")} required value={form.title} error={fieldErrors.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+          <FormInput label={translate("Description")} value={form.description} error={fieldErrors.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+          <Select label={translate("Class (optional)")} value={form.classId} onChange={(e) => setForm({ ...form, classId: e.target.value })}>
+            <option value="">{translate("All classes")}</option>
             {classOptions.map((c) => (
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
           </Select>
-          <Select label="Subject (optional)" value={form.subjectId} onChange={(e) => setForm({ ...form, subjectId: e.target.value })}>
-            <option value="">All subjects</option>
+          <Select label={translate("Subject (optional)")} value={form.subjectId} onChange={(e) => setForm({ ...form, subjectId: e.target.value })}>
+            <option value="">{translate("All subjects")}</option>
             {subjectOptions.map((s) => (
               <option key={s.id} value={s.id}>{s.name}</option>
             ))}
           </Select>
-          <Select label="Visibility" required value={form.visibility} onChange={(e) => setForm({ ...form, visibility: e.target.value as 'class' | 'institution' })}>
-            <option value="institution">Institution-wide</option>
-            <option value="class">Specific class</option>
+          <Select label={translate("Visibility")} required value={form.visibility} onChange={(e) => setForm({ ...form, visibility: e.target.value as 'class' | 'institution' })}>
+            <option value="institution">{translate("Institution-wide")}</option>
+            <option value="class">{translate("Specific class")}</option>
           </Select>
           <FileDropzone onFiles={handleFiles} disabled={replacing} />
           {files.length > 0 && (
             <div className="bg-slate-50 rounded-lg p-3">
-              <p className="text-xs text-slate-500 mb-2">Selected files:</p>
+              <p className="text-xs text-slate-500 mb-2">{translate("Selected files:")}</p>
               <ul className="text-sm text-slate-700 space-y-1">
                 {files.map((f) => (
-                  <li key={f.name}>{f.name} ({(f.size / 1024 / 1024).toFixed(2)} MB)</li>
+                  <li key={f.name}>{f.name} ({(f.size / 1024 / 1024).toFixed(2)} {' '}{translate("MB)")}</li>
                 ))}
               </ul>
             </div>
           )}
           <div className="mt-4 flex justify-end gap-3">
             <Button variant="secondary" onClick={() => setOpenForm(false)} disabled={replacing}>
-              Cancel
-            </Button>
+              {translate("Cancel")}{' '}</Button>
             <Button type="submit" loading={replacing} disabled={replacing || !files.length}>
-              Replace
-            </Button>
+              {translate("Replace")}{' '}</Button>
           </div>
         </form>
       </Modal>

@@ -1,8 +1,9 @@
+import { translate  } from '@/i18n';
 import { useParams } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
 import { EmptyState } from '@/components/common/EmptyState';
 import {
-  NAV_SECTIONS,
+  getNavSections,
   type ShellVariant,
 } from '@/components/layout/AdminSidebar';
 
@@ -23,21 +24,19 @@ const SECTION_PHASES: Record<string, string> = {
 
 export default function ComingSoonPage({ area }: { area: ShellVariant }) {
   const { section } = useParams<{ section: string }>();
-  const items = NAV_SECTIONS[area].flatMap((entry) => entry.items);
+  const items = getNavSections()[area].flatMap((entry) => entry.items);
   const item = items.find((candidate) => candidate.to.endsWith(`/${section ?? ''}`));
-  const phase = (section && SECTION_PHASES[section]) || 'a later phase';
+  const phase = translate((section && SECTION_PHASES[section]) || 'a later phase');
 
   return (
     <AppShell variant={area}>
       <h1 className="mb-4 text-xl font-semibold text-slate-900">
-        {item?.label ?? 'Coming soon'}
+        {item?.label ?? translate('Coming soon')}
       </h1>
       <EmptyState
-        title={`This section arrives in ${phase}`}
-        description="The full page is being built and tested phase by phase. The navigation is
-          already in place so you can review the layout."
+        title={`${translate('This section arrives in')} ${phase}`}
+        description={translate("The full page is being built and tested phase by phase. The navigation is\r\n          already in place so you can review the layout.")}
       />
     </AppShell>
   );
 }
-

@@ -12,6 +12,7 @@ the path and not stored inside each record.
   institutions/{instId}                  # institution profile (status: active|suspended|…)
   institutionRequests/{uid}              # institution registration request (id = requester uid)
   pendingAccounts/{code}                 # one-time activation/invite code
+  pendingAccountsByInstitution/{instId}/{code} # tenant-scoped listing index
 ```
 
 ## Users (`/users/{uid}`)
@@ -21,7 +22,7 @@ the path and not stored inside each record.
 | uid | string | Firebase Auth uid |
 | email | string | matches auth token email |
 | displayName | string | |
-| role | 'platformOptioner\|institutionAdmin\|teacher\|student\|pending' | |
+| role | 'platformOwner\|institutionAdmin\|teacher\|student\|pending' | |
 | status | 'pending\|active\|inactive\|suspended' | |
 | institutionId | string\|null | null only for platformOwner / pending |
 | classId | string\|null | students only |
@@ -43,11 +44,13 @@ the path and not stored inside each record.
 
 ## Institution requests (`/institutionRequests/{uid}`)
 
-Same fields as `PendingAccount` in `src/types/index.ts` plus `institutionName`, etc.
+Institution registration request fields are defined by `InstitutionRequest` in
+`src/types/index.ts`.
 
 ## Pending accounts (`/pendingAccounts/{code}`)
 
-One-time activation codes. See `PendingAccount` type.
+One-time activation codes. Codes are stored at `/pendingAccounts/{code}` for activation;
+`/pendingAccountsByInstitution/{instId}/{code}` is the private, tenant-scoped listing index.
 
 ## Classes (`/{instId}/classes/{id}`)
 
@@ -101,15 +104,18 @@ Path-keyed by (class, date, student) — naturally duplicate-proof. Date is
 
 ## Tests (`/{instId}/tests/{testId}`)
 
-Metadata plus sub-collections:
+Staff-only metadata and sub-collections:
 
 ```
-/tests/{testId}/                      test metadata (see Test type)
+/{instId}/tests/{testId}/             staff-only test metadata and content
   _questions/{qId}/                   staff only — includes correct answer
   _studentQuestions/{qId}/            student readable — NO correct answer
   _attempts/{studentUid}/             student writes own; staff reads all
-  _results/{studentUid}/              staff writes; student reads if showResults
+  _results/{studentUid}/              staff reads/writes; student reads own after results release
 ```
+
+Student-readable metadata is mirrored at `/{instId}/testCatalog/{testId}`. The service keeps
+this catalog in sync with staff-only test metadata using atomic multi-location updates.
 
 Test metadata fields: `title`, `description`, `classId`, `subjectId`, `startTime`
 (epoch ms), `endTime` (epoch ms), `durationMin`, `maxScore`, `status`
@@ -126,7 +132,9 @@ Result fields: `score`, `total`, `gradedAt`, `method` ('client'\|'server').
 ## Materials (`/{instId}/materials/{materialId}`)
 
 Metadata in RTDB; file blob in Firebase Storage at
-`materials/{instId}/{materialId}/{fileName}`.
+`materials/{uploaderUid}/{instId}/{materialId}/{fileName}`. Storage Rules restrict file
+operations to the uploader; authenticated institution members receive the Firebase
+download URL from access-controlled RTDB metadata.
 
 | Field | Type | Notes |
 |---|---|---|
@@ -148,7 +156,8 @@ Metadata in RTDB; file blob in Firebase Storage at
 ## Security Rules
 
 - `firebase/database.rules.json` — RTDB rules (default deny, explicit allowances)
-- `firebase/storage.rules` — Storage rules (materials path only)
+- `firebase/storage.rules` — Storage rules (uploader-owned materials path)
 
-Both are tested in `tests/rules/database.rules.test.ts` (RTDB) and enforced at the
-Firebase level — the client cannot bypass them.
+Both are tested in `tests/rules/` and enforced at the Firebase level — the client cannot
+bypass them. Existing test records must be copied to `/{instId}/testCatalog/{testId}` before
+students can see tests created before the catalog was introduced.

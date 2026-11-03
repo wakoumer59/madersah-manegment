@@ -1,3 +1,4 @@
+import { translate  } from '@/i18n';
 import { useCallback, useEffect, useState } from 'react';
 import { FileText, Download } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
@@ -47,7 +48,7 @@ export default function StudentMaterialListPage() {
       if (full?.downloadUrl) {
         window.open(full.downloadUrl, '_blank');
       }
-      toast.success(`Downloading ${material.fileName}…`);
+      toast.success(translate('Downloading {fileName}…', { fileName: material.fileName }));
     } catch (err) { setError(errorMessage(err)); } finally { setDownloading(null); }
   };
 
@@ -56,7 +57,7 @@ export default function StudentMaterialListPage() {
     return (
       <AppShell variant="student">
         <div role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error} <button type="button" onClick={() => void load()} className="font-medium underline ml-2">Retry</button>
+          {error} <button type="button" onClick={() => void load()} className="font-medium underline ml-2">{translate("Retry")}</button>
         </div>
       </AppShell>
     );
@@ -66,10 +67,10 @@ export default function StudentMaterialListPage() {
     return (
       <AppShell variant="student">
         <div className="mb-5">
-          <h1 className="text-2xl font-bold text-slate-900">Learning Materials</h1>
-          <p className="text-sm text-slate-500">Class materials shared by your teachers.</p>
+          <h1 className="text-2xl font-bold text-slate-900">{translate("Learning Materials")}</h1>
+          <p className="text-sm text-slate-500">{translate("Class materials shared by your teachers.")}</p>
         </div>
-        <EmptyState icon={<FileText className="h-10 w-10" />} title="No materials available" description="Your teachers haven't shared any materials yet." />
+        <EmptyState icon={<FileText className="h-10 w-10" />} title={translate("No materials available")} description={translate("Your teachers haven't shared any materials yet.")} />
       </AppShell>
     );
   }
@@ -77,16 +78,16 @@ export default function StudentMaterialListPage() {
   return (
     <AppShell variant="student">
       <div className="mb-5">
-        <h1 className="text-2xl font-bold text-slate-900">Learning Materials</h1>
-        <p className="text-sm text-slate-500">Class materials shared by your teachers.</p>
+        <h1 className="text-2xl font-bold text-slate-900">{translate("Learning Materials")}</h1>
+        <p className="text-sm text-slate-500">{translate("Class materials shared by your teachers.")}</p>
       </div>
 
       <DataTable<Material>
         columns={[
-          { key: 'title', label: 'Title' },
-          { key: 'fileName', label: 'File', render: (m) => m.fileName },
-          { key: 'contentType', label: 'Type', render: (m) => m.contentType.split('/').pop()?.toUpperCase() || '' },
-          { key: 'size', label: 'Size', render: (m) => `${(m.size / 1024 / 1024).toFixed(2)} MB` },
+          { key: 'title', label: translate("Title") },
+          { key: 'fileName', label: translate("File"), render: (m) => m.fileName },
+          { key: 'contentType', label: translate("Type"), render: (m) => m.contentType.split('/').pop()?.toUpperCase() || '' },
+          { key: 'size', label: translate("Size"), render: (m) => `${(m.size / 1024 / 1024).toFixed(2)} MB` },
           {
             key: 'actions', label: '',
             render: (m) => (
@@ -96,8 +97,7 @@ export default function StudentMaterialListPage() {
                 disabled={downloading === m.id}
                 loading={downloading === m.id}
               >
-                <Download className="h-3 w-3 mr-1" /> Download
-              </Button>
+                <Download className="h-3 w-3 mr-1" /> {' '}{translate("Download")}{' '}</Button>
             ),
           },
         ]}
@@ -105,7 +105,7 @@ export default function StudentMaterialListPage() {
       />
       {hasMore && (
         <div className="mt-4 flex justify-center">
-          <Button variant="secondary" onClick={() => setCursor((c) => c ?? '')} className="w-full sm:w-auto">Load more</Button>
+          <Button variant="secondary" onClick={() => setCursor((c) => c ?? '')} className="w-full sm:w-auto">{translate("Load more")}</Button>
         </div>
       )}
     </AppShell>

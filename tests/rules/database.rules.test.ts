@@ -17,6 +17,7 @@ const USER_B = 'userB'; // another pending user
 const ADMIN_A = 'adminA';
 const ADMIN_B = 'adminB';
 const STUDENT_A = 'studentA';
+const LOCKED_STUDENT = 'lockedStudent';
 const INST_A = 'instA';
 const INST_B = 'instB';
 
@@ -80,6 +81,14 @@ beforeEach(async () => {
     await set(ref(db, `users/${ADMIN_A}`), userRecord(ADMIN_A, 'admA@test.dev', 'institutionAdmin', 'active', INST_A));
     await set(ref(db, `users/${ADMIN_B}`), userRecord(ADMIN_B, 'admB@test.dev', 'institutionAdmin', 'active', INST_B));
     await set(ref(db, `users/${STUDENT_A}`), userRecord(STUDENT_A, 'stuA@test.dev', 'student', 'active', INST_A, 'class1'));
+    await set(ref(db, `users/${LOCKED_STUDENT}`), {
+      ...userRecord(LOCKED_STUDENT, 'locked@test.dev', 'student', 'active', INST_A, 'class1'),
+      mustChangePassword: true,
+    });
+    await set(ref(db, `${INST_A}/students/${STUDENT_A}`), {
+      uid: STUDENT_A, displayName: 'Test Student', email: 'stuA@test.dev',
+      classId: 'class1', admissionNo: 'ADM-1', status: 'active', createdAt: 1000,
+    });
     await set(ref(db, `institutions/${INST_A}`), {
       id: INST_A, name: 'Madrasah A', status: 'active', contactEmail: 'a@example.com',
       phone: '1', address: 'Addr A', createdBy: ADMIN_A, createdAt: 1000, updatedAt: 1000,
@@ -100,10 +109,69 @@ describe('default deny', () => {
     await assertFails(get(ref(anon, 'institutionRequests')));
   });
 
-  it('denies domains that have no rules yet (students, attendance)', async () => {
+  it('denies unscoped student writes and scopes attendance by institution', async () => {
     const adminDb = dbFor(ADMIN_A, 'admA@test.dev');
     await assertFails(set(ref(adminDb, `students/${INST_A}/s1`), { uid: 's1' }));
-    await assertFails(set(ref(adminDb, `attendance/${INST_A}/class1/2026-10-16`), { x: 1 }));
+    await assertSucceeds(set(
+      ref(adminDb, `${INST_A}/attendance/class1/2026-10-16/${STUDENT_A}`),
+      { status: 'present', markedBy: ADMIN_A, updatedAt: 1000 },
+    ));
+    await assertFails(set(
+      ref(adminDb, `${INST_B}/attendance/class1/2026-10-16/${STUDENT_A}`),
+      { status: 'present', markedBy: ADMIN_A, updatedAt: 1000 },
+    ));
+  });
+});
+
+describe('student management', () => {
+  it('lets an institution admin edit and remove a student in their own institution', async () => {
+    const adminDb = dbFor(ADMIN_A, 'admA@test.dev');
+    await assertSucceeds(update(ref(adminDb), {
+      [`${INST_A}/students/${STUDENT_A}/displayName`]: 'Updated Student',
+      [`${INST_A}/students/${STUDENT_A}/classId`]: 'class2',
+      [`${INST_A}/students/${STUDENT_A}/admissionNo`]: 'ADM-2',
+      [`users/${STUDENT_A}/displayName`]: 'Updated Student',
+      [`users/${STUDENT_A}/classId`]: 'class2',
+    }));
+    await assertSucceeds(get(ref(adminDb, `${INST_A}/students/${STUDENT_A}`)));
+    await assertFails(update(ref(dbFor(ADMIN_B, 'admB@test.dev')), {
+      [`${INST_A}/students/${STUDENT_A}/displayName`]: 'Cross-tenant edit',
+      [`users/${STUDENT_A}/displayName`]: 'Cross-tenant edit',
+    }));
+
+    await assertSucceeds(update(ref(adminDb), {
+      [`${INST_A}/students/${STUDENT_A}`]: null,
+      [`users/${STUDENT_A}`]: null,
+    }));
+  });
+});
+
+describe('temporary password access', () => {
+  it('lets a temporary-password user read their profile but blocks tenant data', async () => {
+    const lockedDb = dbFor(LOCKED_STUDENT, 'locked@test.dev');
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await set(ref(ctx.database(), 'pendingAccounts/legacy-code'), {
+        code: 'legacy-code',
+        email: 'locked@test.dev',
+        displayName: 'Locked Student',
+        role: 'student',
+        institutionId: INST_A,
+        classId: 'class1',
+        status: 'unused',
+        usedBy: null,
+        createdBy: ADMIN_A,
+        createdAt: 1000,
+      });
+    });
+    await assertSucceeds(get(ref(lockedDb, `users/${LOCKED_STUDENT}`)));
+    await assertFails(update(ref(lockedDb, `users/${LOCKED_STUDENT}`), { mustChangePassword: false }));
+    await assertFails(get(ref(lockedDb, `${INST_A}/classes`)));
+    await assertFails(get(ref(lockedDb, `${INST_A}/testCatalog`)));
+    await assertFails(get(ref(lockedDb, 'pendingAccounts/legacy-code')));
+    await assertFails(update(ref(lockedDb, 'pendingAccounts/legacy-code'), {
+      status: 'used',
+      usedBy: LOCKED_STUDENT,
+    }));
   });
 });
 
@@ -317,7 +385,221 @@ describe('institution admin user management', () => {
   });
 });
 
+describe('tenant data access', () => {
+  it('allows staff access only within their active institution', async () => {
+    const adminDb = dbFor(ADMIN_A, 'admA@test.dev');
+    await assertSucceeds(set(ref(adminDb, `${INST_A}/classes/class1`), {
+      id: 'class1', name: 'Grade 1', academicYear: '2026/2027',
+      teacherUid: null, studentCount: 0, createdAt: 1000,
+    }));
+    await assertFails(get(ref(adminDb, `${INST_B}/classes`)));
+    await assertFails(set(ref(adminDb, `${INST_B}/classes/class1`), {
+      id: 'class1', name: 'Hijacked', academicYear: '2026/2027',
+      teacherUid: null, studentCount: 0, createdAt: 1000,
+    }));
+  });
 
+  it('exposes only the published student question copy before submission', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.database();
+      await set(ref(db, `${INST_A}/testCatalog/test1`), {
+        id: 'test1', title: 'Test', description: '', classId: 'class1',
+        subjectId: null, startTime: 0, endTime: Date.now() + 60_000,
+        durationMin: 30, maxScore: 1, status: 'published',
+        showResults: false, questionCount: 1, createdBy: ADMIN_A, createdAt: 1000,
+      });
+      await set(ref(db, `${INST_A}/tests/test1/_questions/q1`), {
+        id: 'q1', type: 'mcq', text: 'Question?', options: { A: 'Answer' }, correct: 'A',
+      });
+      await set(ref(db, `${INST_A}/tests/test1/_studentQuestions/q1`), {
+        id: 'q1', type: 'mcq', text: 'Question?', options: { A: 'Answer' },
+      });
+    });
 
+    const studentDb = dbFor(STUDENT_A, 'stuA@test.dev');
+    await assertSucceeds(get(ref(studentDb, `${INST_A}/testCatalog`)));
+    await assertSucceeds(get(ref(studentDb, `${INST_A}/tests/test1/_studentQuestions`)));
+    await assertFails(get(ref(studentDb, `${INST_A}/tests/test1/_questions`)));
+    await assertSucceeds(set(ref(studentDb, `${INST_A}/tests/test1/_attempts/${STUDENT_A}`), {
+      testId: 'test1', studentUid: STUDENT_A, answers: { q1: 'A' },
+      startedAt: Date.now(), submittedAt: Date.now(), status: 'submitted',
+    }));
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await set(ref(ctx.database(), `${INST_A}/tests/test1/_results/${STUDENT_A}`), {
+        score: 1, total: 1, gradedAt: Date.now(), method: 'client',
+      });
+    });
+    await assertSucceeds(get(ref(studentDb, `${INST_A}/tests/test1/_attempts/${STUDENT_A}`)));
+    await assertSucceeds(get(ref(studentDb, `${INST_A}/tests/test1/_questions`)));
+    await assertFails(get(ref(studentDb, `${INST_A}/tests/test1/_results/${STUDENT_A}`)));
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await update(ref(ctx.database(), `${INST_A}/testCatalog/test1`), { showResults: true });
+    });
+    await assertSucceeds(get(ref(studentDb, `${INST_A}/tests/test1/_results/${STUDENT_A}`)));
+    await assertFails(get(ref(studentDb, `${INST_A}/tests/test1/_results/${STUDENT_A}x`)));
+    await assertFails(get(ref(studentDb, `${INST_B}/testCatalog`)));
+  });
 
+  it('allows a student to read answers only after submitting their own attempt', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.database();
+      await set(ref(db, `${INST_A}/testCatalog/test1`), {
+        id: 'test1', classId: 'class1', status: 'published',
+        startTime: 0, endTime: Date.now() + 60_000, showResults: true,
+      });
+      await set(ref(db, `${INST_A}/tests/test1/_questions/q1`), {
+        id: 'q1', type: 'mcq', text: 'Question?', options: { A: 'Answer' }, correct: 'A',
+      });
+    });
 
+    const studentDb = dbFor(STUDENT_A, 'stuA@test.dev');
+    const attemptRef = ref(studentDb, `${INST_A}/tests/test1/_attempts/${STUDENT_A}`);
+    await assertFails(get(ref(studentDb, `${INST_A}/tests/test1/_questions`)));
+    await assertSucceeds(set(attemptRef, {
+      testId: 'test1', studentUid: STUDENT_A, answers: { q1: 'A' },
+      startedAt: Date.now(), submittedAt: Date.now(), status: 'submitted',
+    }));
+    await assertSucceeds(get(ref(studentDb, `${INST_A}/tests/test1/_questions`)));
+    await assertFails(get(ref(dbFor(STUDENT_A, 'stuA@test.dev'), `${INST_B}/tests/test1/_questions`)));
+  });
+});
+
+describe('activation codes', () => {
+  const activationCode = 'MDR-ABC123';
+  const account = {
+    code: activationCode,
+    email: 'pendA@test.dev',
+    displayName: 'Test User',
+    role: 'student',
+    institutionId: INST_A,
+    classId: null,
+    status: 'unused',
+    usedBy: null,
+    createdBy: ADMIN_A,
+    createdAt: 1000,
+  };
+
+  it('scopes code listings to the creating institution', async () => {
+    const adminDb = dbFor(ADMIN_A, 'admA@test.dev');
+    await assertSucceeds(update(ref(adminDb), {
+      [`pendingAccounts/${activationCode}`]: account,
+      [`pendingAccountsByInstitution/${INST_A}/${activationCode}`]: account,
+    }));
+    await assertSucceeds(get(ref(adminDb, `pendingAccountsByInstitution/${INST_A}`)));
+    await assertFails(get(ref(dbFor(ADMIN_B, 'admB@test.dev'), `pendingAccountsByInstitution/${INST_A}`)));
+    await assertFails(get(ref(dbFor(USER_B, 'pendB@test.dev'), `pendingAccounts/${activationCode}`)));
+  });
+
+  it('only lets the matching account activate and redeem its code', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.database();
+      await set(ref(db, `pendingAccounts/${activationCode}`), account);
+      await set(ref(db, `pendingAccountsByInstitution/${INST_A}/${activationCode}`), account);
+    });
+
+    const pendingDb = dbFor(USER_A, 'pendA@test.dev');
+    await assertSucceeds(update(ref(pendingDb, `users/${USER_A}`), {
+      activationCode,
+      role: 'student',
+      status: 'active',
+      institutionId: INST_A,
+      displayName: 'Test User',
+    }));
+    await assertSucceeds(update(ref(pendingDb), {
+      [`pendingAccounts/${activationCode}/status`]: 'used',
+      [`pendingAccounts/${activationCode}/usedBy`]: USER_A,
+      [`pendingAccountsByInstitution/${INST_A}/${activationCode}/status`]: 'used',
+      [`pendingAccountsByInstitution/${INST_A}/${activationCode}/usedBy`]: USER_A,
+    }));
+
+    const otherDb = dbFor(USER_B, 'pendB@test.dev');
+    await assertFails(update(ref(otherDb, `users/${USER_B}`), {
+      activationCode,
+      role: 'student',
+      status: 'active',
+      institutionId: INST_A,
+      displayName: 'Test User',
+    }));
+  });
+
+  it('creates a teacher roster entry atomically when the invited teacher activates', async () => {
+    const teacherCode = 'MDR-TEACH1';
+    const teacherAccount = {
+      ...account,
+      code: teacherCode,
+      role: 'teacher',
+    };
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.database();
+      await set(ref(db, `pendingAccounts/${teacherCode}`), teacherAccount);
+      await set(ref(db, `pendingAccountsByInstitution/${INST_A}/${teacherCode}`), teacherAccount);
+    });
+
+    const pendingDb = dbFor(USER_A, 'pendA@test.dev');
+    await assertSucceeds(update(ref(pendingDb), {
+      [`users/${USER_A}/role`]: 'teacher',
+      [`users/${USER_A}/institutionId`]: INST_A,
+      [`users/${USER_A}/classId`]: null,
+      [`users/${USER_A}/status`]: 'active',
+      [`users/${USER_A}/activationCode`]: teacherCode,
+      [`users/${USER_A}/displayName`]: 'Test User',
+      [`${INST_A}/teachers/${USER_A}`]: {
+        uid: USER_A,
+        displayName: 'Test User',
+        email: 'pendA@test.dev',
+        status: 'active',
+        createdAt: Date.now(),
+        activationCode: teacherCode,
+      },
+      [`pendingAccounts/${teacherCode}/status`]: 'used',
+      [`pendingAccounts/${teacherCode}/usedBy`]: USER_A,
+      [`pendingAccountsByInstitution/${INST_A}/${teacherCode}/status`]: 'used',
+      [`pendingAccountsByInstitution/${INST_A}/${teacherCode}/usedBy`]: USER_A,
+    }));
+
+    await assertSucceeds(get(ref(pendingDb, `${INST_A}/teachers/${USER_A}`)));
+    await assertFails(get(ref(dbFor(USER_A, 'pendA@test.dev'), `${INST_B}/teachers/${USER_A}`)));
+  });
+
+  it('creates a student roster entry only for the matching student invitation', async () => {
+    const studentCode = 'MDR-STUD01';
+    const studentAccount = {
+      ...account,
+      code: studentCode,
+      classId: 'class1',
+      admissionNo: 'ADM-101',
+    };
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.database();
+      await set(ref(db, `pendingAccounts/${studentCode}`), studentAccount);
+      await set(ref(db, `pendingAccountsByInstitution/${INST_A}/${studentCode}`), studentAccount);
+    });
+
+    const pendingDb = dbFor(USER_A, 'pendA@test.dev');
+    await assertSucceeds(update(ref(pendingDb), {
+      [`users/${USER_A}/role`]: 'student',
+      [`users/${USER_A}/institutionId`]: INST_A,
+      [`users/${USER_A}/classId`]: 'class1',
+      [`users/${USER_A}/status`]: 'active',
+      [`users/${USER_A}/activationCode`]: studentCode,
+      [`users/${USER_A}/displayName`]: 'Test User',
+      [`${INST_A}/students/${USER_A}`]: {
+        uid: USER_A,
+        displayName: 'Test User',
+        email: 'pendA@test.dev',
+        classId: 'class1',
+        admissionNo: 'ADM-101',
+        status: 'active',
+        createdAt: Date.now(),
+        activationCode: studentCode,
+      },
+      [`pendingAccounts/${studentCode}/status`]: 'used',
+      [`pendingAccounts/${studentCode}/usedBy`]: USER_A,
+      [`pendingAccountsByInstitution/${INST_A}/${studentCode}/status`]: 'used',
+      [`pendingAccountsByInstitution/${INST_A}/${studentCode}/usedBy`]: USER_A,
+    }));
+
+    await assertSucceeds(get(ref(pendingDb, `${INST_A}/students/${USER_A}`)));
+    await assertFails(get(ref(dbFor(USER_A, 'pendA@test.dev'), `${INST_B}/students/${USER_A}`)));
+  });
+});

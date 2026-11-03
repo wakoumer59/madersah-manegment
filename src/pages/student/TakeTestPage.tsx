@@ -1,3 +1,4 @@
+import { translate  } from '@/i18n';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Clock, AlertCircle, CheckCircle } from 'lucide-react';
@@ -9,7 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getAttempt, getTestStudentQuestions, saveAttempt, saveResult } from '@/services/testService';
 import { gradeTest } from '@/utils/grading';
 import { errorMessage } from '@/utils/errors';
-import type { Question, AnswerChoice } from '@/types';
+import type { Question, AnswerChoice, TestAttempt } from '@/types';
 
 interface TestMeta {
   id: string; title: string; description: string; durationMin: number;
@@ -23,7 +24,7 @@ export default function TakeTestPage() {
   const studentUid = authUser?.uid ?? '';
   const [test, setTest] = useState<TestMeta | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [attempt, setAttempt] = useState<any>(null);
+  const [attempt, setAttempt] = useState<TestAttempt | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -115,7 +116,7 @@ export default function TakeTestPage() {
     return (
       <AppShell variant="student">
         <div role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error || 'Test not found'}
+          {error || translate('Test not found')}
         </div>
       </AppShell>
     );
@@ -132,8 +133,8 @@ export default function TakeTestPage() {
       <AppShell variant="student">
         <div className="text-center py-10">
           <AlertCircle className="mx-auto h-12 w-12 text-amber-500" />
-          <h2 className="mt-4 text-xl font-bold text-slate-900">Test not yet available</h2>
-          <p className="mt-2 text-sm text-slate-500">{test.title} starts at {new Date(test.startTime).toLocaleString()}.</p>
+          <h2 className="mt-4 text-xl font-bold text-slate-900">{translate("Test not yet available")}</h2>
+          <p className="mt-2 text-sm text-slate-500">{test.title} {' '}{translate("starts at")}{' '}{new Date(test.startTime).toLocaleString()}.</p>
         </div>
       </AppShell>
     );
@@ -144,9 +145,9 @@ export default function TakeTestPage() {
       <AppShell variant="student">
         <div className="text-center py-10">
           <CheckCircle className="mx-auto h-12 w-12 text-emerald-500" />
-          <h2 className="mt-4 text-xl font-bold text-slate-900">Test submitted</h2>
-          <p className="mt-2 text-sm text-slate-500">Your answers have been recorded.</p>
-          <Button onClick={() => setShowResults(true)} className="mt-6">View results</Button>
+          <h2 className="mt-4 text-xl font-bold text-slate-900">{translate("Test submitted")}</h2>
+          <p className="mt-2 text-sm text-slate-500">{translate("Your answers have been recorded.")}</p>
+          <Button onClick={() => setShowResults(true)} className="mt-6">{translate("View results")}</Button>
         </div>
       </AppShell>
     );
@@ -156,11 +157,10 @@ export default function TakeTestPage() {
     return (
       <AppShell variant="student">
         <div className="max-w-md mx-auto">
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">Results</h1>
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">{translate("Results")}</h1>
           <p className="text-sm text-slate-500 mb-6">{test.title}</p>
           <div className="rounded-xl border border-slate-200 bg-white p-6 text-center">
-            <div className="text-4xl font-bold text-orange-600">0 / 0</div>
-            <p className="text-sm text-slate-500">Results will be available when published.</p>
+            <p className="text-sm text-slate-500">{translate("Your submission has been recorded. Results will be available when published.")}</p>
           </div>
         </div>
       </AppShell>
@@ -183,7 +183,7 @@ export default function TakeTestPage() {
         </div>
       </div>
 
-      <p className="mb-4 text-sm text-slate-500">Answered {answeredCount} of {questions.length} questions</p>
+      <p className="mb-4 text-sm text-slate-500">{translate("Answered")}{' '}{answeredCount} {' '}{translate("of")}{' '}{questions.length} {' '}{translate("questions")}</p>
 
       <form noValidate className="space-y-4">
         {questions.map((q) => (
@@ -229,14 +229,14 @@ export default function TakeTestPage() {
       </form>
 
       <div className="mt-6 flex justify-end">
-        <Button variant="secondary" onClick={() => setShowSubmitConfirm(true)}>Submit test</Button>
+        <Button variant="secondary" onClick={() => setShowSubmitConfirm(true)}>{translate("Submit test")}</Button>
       </div>
 
       <ConfirmDialog
         open={showSubmitConfirm}
-        title="Submit test?"
-        message="You won't be able to change your answers after submitting. Are you sure?"
-        confirmLabel="Submit"
+        title={translate("Submit test?")}
+        message={translate("You won't be able to change your answers after submitting. Are you sure?")}
+        confirmLabel={translate("Submit")}
         busy={submitting}
         onConfirm={handleSubmit}
         onCancel={() => setShowSubmitConfirm(false)}

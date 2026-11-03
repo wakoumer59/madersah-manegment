@@ -1,4 +1,5 @@
 import { useId, type InputHTMLAttributes } from 'react';
+import { translate } from '@/i18n';
 
 interface FormInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'id'> {
   label: string;
@@ -27,7 +28,7 @@ export function FormInput({ label, error, hint, className = '', ...rest }: FormI
       />
       {error && (
         <p id={`${id}-error`} role="alert" className="mt-1 text-sm text-red-600">
-          {error}
+          {translate(error)}
         </p>
       )}
       {!error && hint && <p className="mt-1 text-sm text-slate-500">{hint}</p>}

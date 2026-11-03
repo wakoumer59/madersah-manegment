@@ -1,3 +1,4 @@
+import { translate  } from '@/i18n';
 import { useCallback, useEffect, useState } from 'react';
 import { BarChart3, User } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
@@ -10,7 +11,7 @@ import { listStudentsPaged } from '@/services/studentService';
 import { errorMessage } from '@/utils/errors';
 import { letterGrade } from '@/utils/grading';
 import { formatDisplayDate } from '@/utils/dates';
-import type { Test } from '@/types';
+import type { Test, TestResult } from '@/types';
 
 export default function TestResultsPage() {
   const { userRecord } = useAuth();
@@ -20,7 +21,7 @@ export default function TestResultsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedTestId, setSelectedTestId] = useState<string>('');
-  const [results, setResults] = useState<{ studentUid: string; result: any }[]>([]);
+  const [results, setResults] = useState<{ studentUid: string; result: TestResult }[]>([]);
   const [resultsLoading, setResultsLoading] = useState(false);
   const [studentOptions, setStudentOptions] = useState<{ uid: string; displayName: string }[]>([]);
 
@@ -52,7 +53,7 @@ export default function TestResultsPage() {
     return (
       <AppShell variant="admin">
         <div role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error} <button type="button" onClick={() => void loadTests()} className="font-medium underline ml-2">Retry</button>
+          {error} <button type="button" onClick={() => void loadTests()} className="font-medium underline ml-2">{translate("Retry")}</button>
         </div>
       </AppShell>
     );
@@ -64,21 +65,21 @@ export default function TestResultsPage() {
     <AppShell variant="admin">
       <div className="mb-5 flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Test Results</h1>
-          <p className="text-sm text-slate-500">Review student results for published tests.</p>
+          <h1 className="text-2xl font-bold text-slate-900">{translate("Test Results")}</h1>
+          <p className="text-sm text-slate-500">{translate("Review student results for published tests.")}</p>
         </div>
       </div>
 
       <div className="mb-6">
-        <label className="mb-2 block text-sm font-medium text-slate-700">Select a test</label>
+        <label className="mb-2 block text-sm font-medium text-slate-700">{translate("Select a test")}</label>
         <select value={selectedTestId} onChange={(e) => setSelectedTestId(e.target.value)} className="w-full max-w-md rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/30">
-          <option value="">Choose a test…</option>
+          <option value="">{translate("Choose a test…")}</option>
           {tests.map((t) => <option key={t.id} value={t.id}>{t.title}</option>)}
         </select>
       </div>
 
       {!selectedTestId && (
-        <EmptyState icon={<BarChart3 className="h-10 w-10" />} title="Select a test" description="Choose a test from the dropdown to view its results." />
+        <EmptyState icon={<BarChart3 className="h-10 w-10" />} title={translate("Select a test")} description={translate("Choose a test from the dropdown to view its results.")} />
       )}
 
       {selectedTestId && resultsLoading && <LoadingSpinner fullPage />}
@@ -87,15 +88,15 @@ export default function TestResultsPage() {
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h2 className="text-xl font-bold text-slate-900">{selectedTest?.title}</h2>
-              <p className="text-sm text-slate-500">Results for {selectedTest?.classId}</p>
+              <p className="text-sm text-slate-500">{translate("Results for")}{' '}{selectedTest?.classId}</p>
             </div>
             {selectedTest && (
-              <Button variant="secondary" onClick={() => setSelectedTestId('')}>Choose another test</Button>
+              <Button variant="secondary" onClick={() => setSelectedTestId('')}>{translate("Choose another test")}</Button>
             )}
           </div>
 
           {results.length === 0 && (
-            <EmptyState icon={<User className="h-10 w-10" />} title="No results yet" description="No students have submitted this test yet." />
+            <EmptyState icon={<User className="h-10 w-10" />} title={translate("No results yet")} description={translate("No students have submitted this test yet.")} />
           )}
 
           {results.length > 0 && (
@@ -103,11 +104,11 @@ export default function TestResultsPage() {
               <table className="w-full text-left border-b border-slate-100">
                 <thead>
                   <tr className="bg-slate-50">
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400">Student</th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 text-center">Score</th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 text-center">Percentage</th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 text-center">Grade</th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400">Graded at</th>
+                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400">{translate("Student")}</th>
+                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 text-center">{translate("Score")}</th>
+                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 text-center">{translate("Percentage")}</th>
+                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 text-center">{translate("Grade")}</th>
+                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400">{translate("Graded at")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">

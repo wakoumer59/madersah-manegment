@@ -1,3 +1,4 @@
+import { translate  } from '@/i18n';
 import { useCallback, useRef, useState } from 'react';
 import { Upload } from 'lucide-react';
 import { validateFile } from '@/services/materialService';
@@ -115,11 +116,10 @@ export function FileDropzone({
       />
       <div className="flex items-center justify-center gap-3 mb-2">
         <Upload className="h-6 w-6" aria-hidden="true" />
-        <span className="text-sm font-medium">Click to upload or drag files here</span>
+        <span className="text-sm font-medium">{translate("Click to upload or drag files here")}</span>
       </div>
       <p className="text-xs text-slate-500 mb-1">
-        PDF, images (PNG/JPG/GIF/WebP), TXT, DOC/DOCX — up to 10 MB each
-      </p>
+        {translate("PDF, images (PNG/JPG/GIF/WebP), TXT, DOC/DOCX — up to 10 MB each")}{' '}</p>
       {error && (
         <p role="alert" className="mt-2 text-xs text-red-600">{error}</p>
       )}

@@ -1,10 +1,12 @@
 // Student service — /{institutionId}/students/{uid} plus /users/{uid} linkage.
 // Students are created via activation codes (Phase 3 onboarding).
 import {
-  get, limitToFirst, orderByChild, query, ref, serverTimestamp, set,
+  get, limitToFirst, orderByChild, query, ref, update,
   startAfter,
 } from 'firebase/database';
 import { getDb } from '@/firebase/init';
+import { deleteManagedAccount } from '@/services/adminAccountService';
+import { createPendingAccountCode } from '@/services/pendingAccountService';
 import type { Student, UserRecord } from '@/types';
 
 function toStudent(uid: string, value: Record<string, unknown>): Student {
@@ -17,18 +19,18 @@ function toStudent(uid: string, value: Record<string, unknown>): Student {
 }
 
 export async function createStudent(input: {
-  institutionId: string; uid: string; displayName: string; email: string;
-  classId: string; admissionNo: string;
-}): Promise<void> {
-  const instId = input.institutionId;
-  await set(ref(getDb(), `${instId}/students/${input.uid}`), {
-    uid: input.uid, displayName: input.displayName.trim(),
-    email: input.email.trim().toLowerCase(), classId: input.classId,
-    admissionNo: input.admissionNo.trim(), status: 'active',
-    createdAt: serverTimestamp(),
+  institutionId: string; displayName: string; email: string;
+  classId: string; admissionNo: string; createdBy: string;
+}): Promise<string> {
+  return createPendingAccountCode({
+    institutionId: input.institutionId,
+    displayName: input.displayName,
+    email: input.email,
+    role: 'student',
+    classId: input.classId,
+    admissionNo: input.admissionNo,
+    createdBy: input.createdBy,
   });
-  await set(ref(getDb(), `users/${input.uid}/classId`), input.classId);
-  await set(ref(getDb(), `users/${input.uid}/status`), 'active');
 }
 
 export async function listStudentsPaged(
@@ -53,13 +55,36 @@ export async function listStudentsPaged(
 export async function setStudentStatus(
   institutionId: string, uid: string, status: UserRecord['status'],
 ): Promise<void> {
-  await set(ref(getDb(), `${institutionId}/students/${uid}/status`), status);
-  await set(ref(getDb(), `users/${uid}/status`), status);
+  await update(ref(getDb()), {
+    [`${institutionId}/students/${uid}/status`]: status,
+    [`users/${uid}/status`]: status,
+  });
 }
 
-export async function deleteStudent(institutionId: string, uid: string): Promise<void> {
-  await set(ref(getDb(), `${institutionId}/students/${uid}`), null);
-  await set(ref(getDb(), `users/${uid}`), null);
+export async function updateStudent(input: {
+  institutionId: string;
+  student: Student;
+  displayName: string;
+  classId: string;
+  admissionNo: string;
+}): Promise<void> {
+  const displayName = input.displayName.trim();
+  const admissionNo = input.admissionNo.trim();
+  await update(ref(getDb()), {
+    [`${input.institutionId}/students/${input.student.uid}/displayName`]: displayName,
+    [`${input.institutionId}/students/${input.student.uid}/classId`]: input.classId,
+    [`${input.institutionId}/students/${input.student.uid}/admissionNo`]: admissionNo,
+    [`users/${input.student.uid}/displayName`]: displayName,
+    [`users/${input.student.uid}/classId`]: input.classId,
+  });
+}
+
+export async function deleteStudent(uid: string, idToken: string): Promise<void> {
+  await deleteManagedAccount({
+    idToken,
+    uid,
+    role: 'student',
+  });
 }
 
 export async function getStudent(institutionId: string, uid: string): Promise<Student | null> {

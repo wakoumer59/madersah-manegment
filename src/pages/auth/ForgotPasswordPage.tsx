@@ -1,4 +1,5 @@
-﻿import { useState, type FormEvent } from 'react';
+﻿import { translate  } from '@/i18n';
+import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { AuthLayout } from '@/components/layout/AuthLayout';
 import { Button } from '@/components/common/Button';
@@ -21,7 +22,7 @@ export default function ForgotPasswordPage() {
     event.preventDefault();
     setError(null);
     if (!isNonEmpty(email) || !isValidEmail(email)) {
-      setFieldError('Enter a valid email address.');
+      setFieldError(translate("Enter a valid email address."));
       return;
     }
     setFieldError(undefined);
@@ -40,10 +41,10 @@ export default function ForgotPasswordPage() {
   return (
     <AuthLayout
       title={strings.auth.resetPassword}
-      subtitle="Enter your account email and we will send you a reset link."
+      subtitle={translate("Enter your account email and we will send you a reset link.")}
       footer={
         <Link to="/login" className="font-medium text-orange-700 hover:underline">
-          â† Back to {strings.auth.signIn.toLowerCase()}
+          {translate('← Back to')}{' '}{strings.auth.signIn.toLowerCase()}
         </Link>
       }
     >

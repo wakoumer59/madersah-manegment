@@ -1,9 +1,8 @@
 // User record service — /users/{uid} in the Realtime Database.
 // Role and status are NEVER writable by the account's owner (enforced by
 // Security Rules); this service only performs the allowed operations.
-import { get, ref, update } from 'firebase/database';
+import { get, ref, serverTimestamp, update } from 'firebase/database';
 import { getDb } from '@/firebase/init';
-import { redeemPendingAccountCode } from '@/services/pendingAccountService';
 import type { UserRecord } from '@/types';
 
 function toUserRecord(uid: string, data: Record<string, unknown>): UserRecord {
@@ -15,6 +14,7 @@ function toUserRecord(uid: string, data: Record<string, unknown>): UserRecord {
     status: data.status as UserRecord['status'],
     institutionId: (data.institutionId as string | null) ?? null,
     classId: (data.classId as string | null) ?? null,
+    mustChangePassword: data.mustChangePassword === true,
     createdAt: Number(data.createdAt ?? 0),
   };
 }
@@ -32,7 +32,8 @@ export async function getMyUser(uid: string): Promise<UserRecord | null> {
  * Validates the code exists, is unused, and matches the given email, then
  * updates /users/{uid} from role='pending'/'status'='pending' to the real
  * role/institution/class bound to the code (Security Rules enforce every
- * field). Finally marks the code as used (one-time use).
+ * field). Activating a teacher also creates their institution roster record.
+ * The account, roster record, and one-time code are updated atomically.
  *
  * Returns the newly activated role so the caller can redirect accordingly.
  */
@@ -61,19 +62,42 @@ export async function redeemCodeAndActivate(
   const classId = (pa.classId as string | null) ?? null;
   const displayName = String(pa.displayName ?? '');
 
-  // Security rules enforce: existing role must be 'pending', email must match
-  // auth.token.email, code must be unused, and all bound fields must match.
-  await update(ref(db, `users/${uid}`), {
-    role,
-    institutionId,
-    classId,
-    status: 'active',
-    activationCode: code,
-    displayName,
-  });
+  const updates: Record<string, unknown> = {
+    [`users/${uid}/role`]: role,
+    [`users/${uid}/institutionId`]: institutionId,
+    [`users/${uid}/classId`]: classId,
+    [`users/${uid}/status`]: 'active',
+    [`users/${uid}/activationCode`]: code,
+    [`users/${uid}/displayName`]: displayName,
+    [`pendingAccounts/${code}/status`]: 'used',
+    [`pendingAccounts/${code}/usedBy`]: uid,
+    [`pendingAccountsByInstitution/${institutionId}/${code}/status`]: 'used',
+    [`pendingAccountsByInstitution/${institutionId}/${code}/usedBy`]: uid,
+  };
 
-  // Mark the code as used (one-time use).
-  await redeemPendingAccountCode(code, uid);
+  if (role === 'teacher') {
+    updates[`${institutionId}/teachers/${uid}`] = {
+      uid,
+      displayName,
+      email: normalizedEmail,
+      status: 'active',
+      createdAt: serverTimestamp(),
+      activationCode: code,
+    };
+  } else if (role === 'student') {
+    updates[`${institutionId}/students/${uid}`] = {
+      uid,
+      displayName,
+      email: normalizedEmail,
+      classId,
+      admissionNo: String(pa.admissionNo ?? ''),
+      status: 'active',
+      createdAt: serverTimestamp(),
+      activationCode: code,
+    };
+  }
+
+  await update(ref(db), updates);
 
   return role;
 }

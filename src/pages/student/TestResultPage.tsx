@@ -1,5 +1,6 @@
+import { translate  } from '@/i18n';
 import { useCallback, useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { User } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { Button } from '@/components/common/Button';
@@ -10,14 +11,16 @@ import { getResult, getTest } from '@/services/testService';
 import { errorMessage } from '@/utils/errors';
 import { letterGrade } from '@/utils/grading';
 import { formatDisplayDate } from '@/utils/dates';
+import type { Test, TestResult } from '@/types';
 
 export default function StudentTestResultPage() {
+  const navigate = useNavigate();
   const { userRecord, authUser } = useAuth();
   const { testId } = useParams<{ testId: string }>();
   const institutionId = userRecord?.institutionId ?? '';
   const studentUid = authUser?.uid ?? '';
-  const [test, setTest] = useState<any>(null);
-  const [result, setResult] = useState<any>(null);
+  const [test, setTest] = useState<Test | null>(null);
+  const [result, setResult] = useState<TestResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,7 +29,8 @@ export default function StudentTestResultPage() {
     setLoading(true);
     setError(null);
     try {
-      const [t, r] = await Promise.all([getTest(institutionId, testId), getResult(institutionId, testId, studentUid)]);
+      const t = await getTest(institutionId, testId);
+      const r = t?.showResults ? await getResult(institutionId, testId, studentUid) : null;
       setTest(t);
       setResult(r);
     } catch (err) { setError(errorMessage(err)); } finally { setLoading(false); }
@@ -38,7 +42,7 @@ export default function StudentTestResultPage() {
     return (
       <AppShell variant="student">
         <div role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error || 'Test not found'}
+          {error || translate('Test not found')}
         </div>
       </AppShell>
     );
@@ -49,9 +53,15 @@ export default function StudentTestResultPage() {
       <AppShell variant="student">
         <div className="mb-5">
           <h1 className="text-2xl font-bold text-slate-900">{test.title}</h1>
-          <p className="text-sm text-slate-500">Results</p>
+          <p className="text-sm text-slate-500">{translate("Results")}</p>
         </div>
-        <EmptyState icon={<User className="h-10 w-10" />} title="No result yet" description="You haven't taken this test yet, or results haven't been graded." />
+        <EmptyState
+          icon={<User className="h-10 w-10" />}
+          title={test.showResults ? translate('No result yet') : translate('Results not released')}
+          description={test.showResults
+            ? translate('You haven’t taken this test yet, or results haven’t been graded.')
+            : translate('Your result will appear here after your teacher releases it.')}
+        />
       </AppShell>
     );
   }
@@ -62,7 +72,7 @@ export default function StudentTestResultPage() {
     <AppShell variant="student">
       <div className="mb-5">
         <h1 className="text-2xl font-bold text-slate-900">{test.title}</h1>
-        <p className="text-sm text-slate-500">Your results</p>
+        <p className="text-sm text-slate-500">{translate("Your results")}</p>
       </div>
 
       <div className="rounded-xl border border-slate-200 bg-white p-6 text-center">
@@ -70,12 +80,12 @@ export default function StudentTestResultPage() {
         <div className="text-2xl font-bold text-slate-900 mb-1">{pct}%</div>
         <div className={`text-lg font-semibold ${pct >= 70 ? 'text-emerald-600' : 'text-rose-600'}`}>{letterGrade(pct)}</div>
         <p className="mt-4 text-sm text-slate-500">
-          Graded on {result.gradedAt ? formatDisplayDate(new Date(result.gradedAt).toISOString().split('T')[0]) : '—'}
+          {translate("Graded on")}{' '}{result.gradedAt ? formatDisplayDate(new Date(result.gradedAt).toISOString().split('T')[0]) : '—'}
         </p>
       </div>
 
       <div className="mt-6 flex justify-center">
-        <Button variant="secondary">Back to tests</Button>
+        <Button variant="secondary" onClick={() => void navigate('/student/tests')}>{translate("Back to tests")}</Button>
       </div>
     </AppShell>
   );

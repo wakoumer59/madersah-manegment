@@ -1,3 +1,5 @@
+import { translate } from '@/i18n';
+
 interface LoadingSpinnerProps {
   label?: string;
   /** renders centered in the remaining viewport space */
@@ -11,7 +13,7 @@ export function LoadingSpinner({ label = 'Loading…', fullPage = false }: Loadi
         <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
         <path d="M4 12a8 8 0 0 1 8-8" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
       </svg>
-      <span className="text-sm">{label}</span>
+      <span className="text-sm">{translate(label)}</span>
     </div>
   );
   if (!fullPage) return content;

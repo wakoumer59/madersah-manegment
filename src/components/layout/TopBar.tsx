@@ -1,6 +1,7 @@
 import { useLocation } from 'react-router-dom';
 import { GraduationCap, LogOut, Menu } from 'lucide-react';
 import { Button } from '@/components/common/Button';
+import { LanguageSelector, translate } from '@/i18n';
 import {
   findNavItem,
   type ShellVariant,
@@ -30,7 +31,7 @@ export function TopBar({ variant, onOpenMenu }: TopBarProps) {
         <button
           type="button"
           onClick={onOpenMenu}
-          aria-label="Open navigation menu"
+          aria-label={translate('Open navigation menu')}
           className="-ml-1 rounded-lg p-2 text-slate-500 hover:bg-slate-100 md:hidden"
         >
           <Menu className="h-5 w-5" />
@@ -43,8 +44,8 @@ export function TopBar({ variant, onOpenMenu }: TopBarProps) {
           <GraduationCap className="h-4.5 w-4.5" />
         </span>
         {/* Breadcrumb: Portal › Page (desktop) */}
-        <nav aria-label="Breadcrumb" className="hidden min-w-0 items-center gap-1.5 text-sm md:flex">
-          <span className="font-semibold text-slate-900">{PORTAL_LABEL[variant]}</span>
+        <nav aria-label={translate('Breadcrumb')} className="hidden min-w-0 items-center gap-1.5 text-sm md:flex">
+          <span className="font-semibold text-slate-900">{translate(PORTAL_LABEL[variant])}</span>
           <span className="text-slate-300">›</span>
           <span className="truncate text-slate-500">{pageTitle}</span>
         </nav>
@@ -52,14 +53,17 @@ export function TopBar({ variant, onOpenMenu }: TopBarProps) {
           {pageTitle}
         </span>
       </div>
-      <Button
-        variant="secondary"
-        onClick={signOut}
-        className="min-h-[38px] shrink-0 px-3 py-1.5"
-      >
-        <LogOut className="h-4 w-4" aria-hidden="true" />
-        <span className="hidden sm:inline">{strings.auth.signOut}</span>
-      </Button>
+      <div className="flex shrink-0 items-center gap-2">
+        <LanguageSelector />
+        <Button
+          variant="secondary"
+          onClick={signOut}
+          className="min-h-[38px] shrink-0 px-3 py-1.5"
+        >
+          <LogOut className="h-4 w-4" aria-hidden="true" />
+          <span className="hidden sm:inline">{strings.auth.signOut}</span>
+        </Button>
+      </div>
     </header>
   );
 }

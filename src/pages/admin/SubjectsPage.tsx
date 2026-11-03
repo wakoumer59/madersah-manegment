@@ -1,5 +1,6 @@
+import { translate  } from '@/i18n';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { Plus, BookOpen } from 'lucide-react';
+import { Plus, BookOpen, Trash2 } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { Button } from '@/components/common/Button';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
@@ -27,6 +28,7 @@ export default function SubjectsPage() {
   const { userRecord } = useAuth();
   const toast = useToast();
   const institutionId = userRecord?.institutionId ?? '';
+  const canManageSubjects = userRecord?.role === 'institutionAdmin';
   const [items, setItems] = useState<Subject[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -38,7 +40,7 @@ export default function SubjectsPage() {
   const [openDelete, setOpenDelete] = useState<Subject | null>(null);
   const [form, setForm] = useState<SubjectForm>({ name: '', classId: '', teacherUid: '' });
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof SubjectForm, string>>>({});
-
+  const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState<Subject | null>(null);
 
   const load = useCallback(async () => {
@@ -70,54 +72,66 @@ export default function SubjectsPage() {
     if (!isNonEmpty(form.classId)) errors.classId = 'Class is required.';
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0 || !userRecord) return;
+    setSubmitting(true);
     try {
       await createSubject({
         institutionId, name: form.name, classId: form.classId, teacherUid: form.teacherUid || null,
       });
-      toast.success('Subject created.');
+      toast.success(translate("Subject created."));
       setOpenForm(false);
       setForm({ name: '', classId: '', teacherUid: '' });
       await load();
     } catch (err) {
-      setError(errorMessage(err));
+      const message = errorMessage(err);
+      setError(message);
+      toast.error(message);
     } finally {
+      setSubmitting(false);
       setFieldErrors({});
     }
   };
 
   const handleDelete = async (sub: Subject) => {
     setDeleting(sub);
-    await deleteSubject(institutionId, sub.id);
-    setDeleting(null);
-    setOpenDelete(null);
-    toast.success('Subject removed.');
-    await load();
+    try {
+      await deleteSubject(institutionId, sub.id);
+      setOpenDelete(null);
+      toast.success(translate("Subject removed."));
+      await load();
+    } catch (err) {
+      const message = errorMessage(err);
+      setError(message);
+      toast.error(message);
+    } finally {
+      setDeleting(null);
+    }
   };
 
   return (
     <AppShell variant="admin">
       <div className="mb-5 flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Subjects</h1>
-          <p className="text-sm text-slate-500">Manage subjects and their class assignments.</p>
+          <h1 className="text-2xl font-bold text-slate-900">{translate("Subjects")}</h1>
+          <p className="text-sm text-slate-500">{translate("Manage subjects and their class assignments.")}</p>
         </div>
-        <Button onClick={() => setOpenForm(true)}><Plus className="h-4 w-4" /> Add subject</Button>
+        {canManageSubjects && (
+          <Button onClick={() => setOpenForm(true)}><Plus className="h-4 w-4" /> {' '}{translate("Add subject")}</Button>
+        )}
       </div>
 
       {loading ? (
         <LoadingSpinner fullPage />
       ) : error && (
         <div role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}{' '}<button type="button" onClick={() => void load()} className="font-medium underline">Retry</button>
+          {error}{' '}<button type="button" onClick={() => void load()} className="font-medium underline">{translate("Retry")}</button>
         </div>
       )}
 
       {!loading && !error && items.length === 0 && (
         <EmptyState
           icon={<BookOpen className="h-10 w-10" />}
-          title="No subjects yet"
-          description="Add your first subject to assign to a class and teacher."
-          action={<Button>Add subject</Button>}
+          title={translate("No subjects yet")}
+          description={translate("Add your first subject to assign to a class and teacher.")}
         />
       )}
 
@@ -125,40 +139,50 @@ export default function SubjectsPage() {
         <>
           <DataTable<Subject>
             columns={[
-              { key: 'name', label: 'Subject Name' },
-              { key: 'classId', label: 'Class', render: (s) => classOptions.find((c) => c.id === s.classId)?.name || '—' },
-              { key: 'teacherUid', label: 'Teacher', render: (s) => teacherOptions.find((t) => t.uid === s.teacherUid)?.displayName || '—' },
+              { key: 'name', label: translate("Subject Name") },
+              { key: 'classId', label: translate("Class"), render: (s) => classOptions.find((c) => c.id === s.classId)?.name || '—' },
+              { key: 'teacherUid', label: translate("Teacher"), render: (s) => teacherOptions.find((t) => t.uid === s.teacherUid)?.displayName || '—' },
             ]}
             items={items}
+            renderActions={canManageSubjects ? (subject) => (
+              <button
+                type="button"
+                aria-label={`Delete ${subject.name}`}
+                onClick={() => setOpenDelete(subject)}
+                className="rounded p-1 text-red-600 hover:bg-red-50"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            ) : undefined}
           />
           <Pagination page={1} hasMore={hasMore} onNext={() => setCursor((c) => c ?? '')} onPrev={() => setCursor(null)} />
         </>
       )}
 
-      <Modal open={openForm} title="Add subject" onClose={() => setOpenForm(false)} busy={deleting === null}>
+      <Modal open={openForm} title={translate("Add subject")} onClose={() => setOpenForm(false)} busy={submitting}>
         <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
           {error && <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
-          <FormInput label="Subject name" required value={form.name} error={fieldErrors.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          <Select label="Class" required value={form.classId} onChange={(e) => setForm({ ...form, classId: e.target.value })}>
-            <option value="">Select a class</option>
+          <FormInput label={translate("Subject name")} required value={form.name} error={fieldErrors.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          <Select label={translate("Class")} required value={form.classId} onChange={(e) => setForm({ ...form, classId: e.target.value })}>
+            <option value="">{translate("Select a class")}</option>
             {classOptions.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </Select>
-          <Select label="Subject teacher (optional)" value={form.teacherUid} onChange={(e) => setForm({ ...form, teacherUid: e.target.value })}>
-            <option value="">None assigned</option>
+          <Select label={translate("Subject teacher (optional)")} value={form.teacherUid} onChange={(e) => setForm({ ...form, teacherUid: e.target.value })}>
+            <option value="">{translate("None assigned")}</option>
             {teacherOptions.map((t) => <option key={t.uid} value={t.uid}>{t.displayName}</option>)}
           </Select>
           <div className="mt-4 flex justify-end gap-3">
-            <Button variant="secondary" onClick={() => setOpenForm(false)} disabled={deleting === null}>Cancel</Button>
-            <Button type="submit" loading={deleting === null}>Add subject</Button>
+            <Button variant="secondary" onClick={() => setOpenForm(false)} disabled={submitting}>{translate("Cancel")}</Button>
+            <Button type="submit" loading={submitting}>{translate("Add subject")}</Button>
           </div>
         </form>
       </Modal>
 
       <ConfirmDialog
         open={openDelete !== null}
-        title="Delete subject"
+        title={translate("Delete subject")}
         message={openDelete ? `Remove “${openDelete.name}”? This cannot be undone.` : ''}
-        confirmLabel="Delete"
+        confirmLabel={translate("Delete")}
         danger
         busy={deleting === openDelete}
         onConfirm={() => { if (openDelete) handleDelete(openDelete); }}

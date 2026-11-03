@@ -1,4 +1,5 @@
-﻿import { Link, useNavigate } from 'react-router-dom';
+﻿import { translate  } from '@/i18n';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,23 +12,19 @@ export default function PendingAccountPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-      <Card title="Your account is pending" className="max-w-md">
+      <Card title={translate("Your account is pending")} className="max-w-md">
         <p className="text-sm text-slate-600">
-          Your account has been created{authUser?.email ? ` for ${authUser.email}` : ''} and is
-          waiting for the next step:
-        </p>
+          {translate("Your account has been created")}{authUser?.email ? ` for ${authUser.email}` : ''} {' '}{translate("and is waiting for the next step:")}{' '}</p>
         <ul className="mt-3 list-inside list-disc space-y-1 text-sm text-slate-600">
           <li>
             <Link to="/register-institution" className="font-medium text-orange-700 underline">
-              Register your madrasah
-            </Link>{' '}
-            â€” the platform owner reviews and approves it, or
-          </li>
-          <li>Activate an invitation code from your madrasah administrator (coming in a later phase).</li>
+              {translate("Register your madrasah")}{' '}</Link>{' '}
+            {translate('or the platform owner reviews and approves it')}{' '}</li>
+          <li>{translate("Activate an invitation code from your madrasah administrator (coming in a later phase).")}</li>
         </ul>
         <div className="mt-5 flex gap-3">
           <Link to="/register-institution">
-            <Button>Register madrasah</Button>
+            <Button>{translate("Register madrasah")}</Button>
           </Link>
           <Button
             variant="secondary"
