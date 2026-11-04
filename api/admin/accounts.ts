@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { ServerValue } from 'firebase-admin/database';
 import type { DecodedIdToken } from 'firebase-admin/auth';
-import { getAdminServices } from '../../server/firebaseAdmin';
+import { getAdminServices } from '../../server/firebaseAdmin.js';
 
 interface ApiRequest extends IncomingMessage {
   body?: unknown;

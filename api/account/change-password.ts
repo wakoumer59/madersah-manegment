@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { getAdminServices } from '../../server/firebaseAdmin';
+import { getAdminServices } from '../../server/firebaseAdmin.js';
 
 interface ApiRequest extends IncomingMessage {
   body?: unknown;
