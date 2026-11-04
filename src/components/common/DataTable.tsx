@@ -30,40 +30,42 @@ export function DataTable<T>({
     );
   }
   return (
-    <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-      <table className="w-full text-left border-b border-slate-100">
-        <thead>
-          <tr>
-            {columns.map((col) => (
-              <th
-                key={col.key}
-                className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 border-b border-slate-100 bg-slate-50"
-              >
-                {col.label}
-              </th>
-            ))}
-            {renderActions && (
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 border-b border-slate-100 bg-slate-50">{translate("Actions")}</th>
-            )}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100">
-          {items.map((item, index) => (
-            <tr key={index} className="hover:bg-slate-50">
+    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[640px] border-b border-slate-100 text-left">
+          <thead>
+            <tr>
               {columns.map((col) => (
-                <td key={col.key} className="px-4 py-3 text-sm text-slate-700 border-b border-slate-50">
-                  {col.render ? col.render(item) : String(item[col.key as keyof T])}
-                </td>
+                <th
+                  key={col.key}
+                  className="border-b border-slate-100 bg-slate-50 px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400"
+                >
+                  {col.label}
+                </th>
               ))}
               {renderActions && (
-                <td className="px-4 py-3 text-sm text-slate-700 border-b border-slate-50">
-                  {renderActions(item)}
-                </td>
+                <th className="border-b border-slate-100 bg-slate-50 px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400">{translate("Actions")}</th>
               )}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {items.map((item, index) => (
+              <tr key={index} className="hover:bg-slate-50">
+                {columns.map((col) => (
+                  <td key={col.key} className="border-b border-slate-50 px-4 py-3 text-sm text-slate-700">
+                    {col.render ? col.render(item) : String(item[col.key as keyof T])}
+                  </td>
+                ))}
+                {renderActions && (
+                  <td className="border-b border-slate-50 px-4 py-3 text-sm text-slate-700">
+                    {renderActions(item)}
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

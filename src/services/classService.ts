@@ -50,6 +50,18 @@ export async function listClassesPaged(
   };
 }
 
+export async function listAllClasses(institutionId: string): Promise<SchoolClass[]> {
+  const classes: SchoolClass[] = [];
+  let cursor: string | null = null;
+  let page: Awaited<ReturnType<typeof listClassesPaged>>;
+  do {
+    page = await listClassesPaged(institutionId, cursor);
+    classes.push(...page.items);
+    cursor = page.nextCursor;
+  } while (cursor);
+  return classes;
+}
+
 export async function assignClassTeacher(
   institutionId: string, classId: string, teacherUid: string | null,
 ): Promise<void> {

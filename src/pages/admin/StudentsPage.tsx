@@ -15,7 +15,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import { deleteStudent, listStudentsPaged, updateStudent } from '@/services/studentService';
 import { createManagedAccount } from '@/services/adminAccountService';
-import { listClassesPaged } from '@/services/classService';
+import { listAllClasses } from '@/services/classService';
 import { errorMessage } from '@/utils/errors';
 import { isNonEmpty, isValidEmail, isValidPassword } from '@/utils/validation';
 import type { Student } from '@/types';
@@ -54,8 +54,8 @@ export default function StudentsPage() {
       setItems(page.items);
       setCursor(page.nextCursor);
       setHasMore(!!page.nextCursor);
-      const classPage = await listClassesPaged(institutionId);
-      setClasses(classPage.items.map((c) => ({ id: c.id, name: c.name })));
+      const allClasses = await listAllClasses(institutionId);
+      setClasses(allClasses.map((classItem) => ({ id: classItem.id, name: classItem.name })));
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -64,6 +64,8 @@ export default function StudentsPage() {
   }, [cursor, institutionId]);
 
   useEffect(() => { void load(); }, [load]);
+
+  const classNameById = new Map(classes.map((classItem) => [classItem.id, classItem.name]));
 
   const openAddForm = () => {
     setEditingStudent(null);
@@ -195,7 +197,11 @@ export default function StudentsPage() {
             columns={[
               { key: 'displayName', label: translate("Name") },
               { key: 'email', label: translate("Email") },
-              { key: 'classId', label: translate("Class") },
+              {
+                key: 'classId',
+                label: translate("Class"),
+                render: (student) => classNameById.get(student.classId) ?? '—',
+              },
               { key: 'admissionNo', label: translate("Admission No.") },
               { key: 'status', label: translate("Status"), render: (s) => (
                 <span className={`px-2 py-0.5 rounded text-xs font-medium ${s.status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-50 text-slate-600'}`}>
