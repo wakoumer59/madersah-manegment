@@ -119,11 +119,13 @@ export default function QaidaReaderPage() {
       <header className="mx-auto mb-5 max-w-4xl">
         <h1 className="text-2xl font-bold text-slate-900">{translate('Qaida Nuraniya')}</h1>
         <p className="mt-1 text-sm text-slate-500">
-          {translate('Choose a lesson to read and listen.')}
+          {translate('Your school’s Qaida lessons will appear here after a teacher adds them.')}
         </p>
-        <p className="mt-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
-          {translate('Browser voice is for practice and may not pronounce Quranic sounds accurately. Follow your teacher for correct recitation.')}
-        </p>
+        {lessons.length > 0 && (
+          <p className="mt-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
+            {translate('Read-aloud uses your device voice for practice; it is not a recorded or verified recitation. Follow your teacher for correct pronunciation.')}
+          </p>
+        )}
       </header>
 
       {error && (
@@ -142,7 +144,7 @@ export default function QaidaReaderPage() {
           <EmptyState
             icon={<BookOpen className="h-10 w-10" />}
             title={translate('No lessons are available yet')}
-            description={translate('Your teacher will add lessons for you here.')}
+            description={translate('Your school has not added Qaida lesson content yet. Ask your teacher to add lessons you are allowed to use.')}
           />
         </div>
       ) : (

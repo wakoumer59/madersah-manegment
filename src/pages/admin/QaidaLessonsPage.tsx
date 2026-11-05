@@ -100,7 +100,7 @@ export default function QaidaLessonsPage() {
           {translate('Add lesson text that students can read and hear in their browser.')}
         </p>
         <p className="mt-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
-          {translate('Add only lesson content you have permission to share. Browser voice is not a recorded or verified recitation.')}
+          {translate('This section does not include a preloaded Qaida book or recorded recitation. Add only lesson content you have permission to share; read-aloud uses your device voice.')}
         </p>
       </header>
 

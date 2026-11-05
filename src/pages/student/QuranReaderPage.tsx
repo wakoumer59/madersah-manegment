@@ -135,6 +135,26 @@ export default function QuranReaderPage() {
     }
   };
 
+  const playSurah = async () => {
+    autoplayNextRef.current = true;
+    setAudioError(false);
+    setError(null);
+    if (selectedAyahIndex !== 0) {
+      setSelectedAyahIndex(0);
+      return;
+    }
+
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.currentTime = 0;
+    try {
+      await audio.play();
+    } catch {
+      autoplayNextRef.current = false;
+      setError(translate('Audio could not be played. Try again.'));
+    }
+  };
+
   const replayAyah = () => {
     const audio = audioRef.current;
     if (!audio || !selectedAyah) return;
@@ -234,6 +254,14 @@ export default function QuranReaderPage() {
                 {translate('Recited by')} {reciter.englishName}
               </p>
             )}
+            <Button
+              className="mt-3"
+              onClick={() => void playSurah()}
+              disabled={loadingSurah || ayahs.length === 0}
+            >
+              <Play className="h-4 w-4" aria-hidden="true" />
+              {translate('Play surah from beginning')}
+            </Button>
           </section>
 
           {loadingSurah ? (
@@ -242,36 +270,70 @@ export default function QuranReaderPage() {
               {translate('Loading surah…')}
             </div>
           ) : (
-            <section aria-label={translate('Ayahs')} className="space-y-3 pb-28">
-              {ayahs.map((ayah, index) => (
-                <button
-                  type="button"
-                  key={`${selectedSurah}-${ayah.numberInSurah}`}
-                  ref={(element) => {
-                    ayahRefs.current[index] = element;
-                  }}
-                  aria-current={index === selectedAyahIndex ? 'true' : undefined}
-                  onClick={() => selectAyah(index)}
-                  className={`w-full rounded-2xl border p-4 text-right transition-colors sm:p-5 ${
-                    index === selectedAyahIndex && isPlaying
-                      ? 'border-amber-400 bg-amber-100 shadow-md ring-2 ring-amber-300'
-                      : index === selectedAyahIndex
-                        ? 'border-emerald-300 bg-emerald-50'
-                      : 'border-slate-200 bg-white hover:bg-slate-50'
-                  }`}
-                >
-                  <span className="mb-3 inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-white px-2 text-xs font-semibold text-emerald-800 shadow-sm">
-                    {ayah.numberInSurah}
-                  </span>
-                  <span
+            <section aria-label={translate('Ayahs')} className="mx-auto max-w-3xl pb-28">
+              <div className="rounded-[1.75rem] border-4 border-double border-amber-300 bg-[#fffdf5] p-5 shadow-[0_12px_36px_rgba(120,83,31,0.12)] sm:p-9">
+                <div className="mb-6 flex items-center justify-center gap-3 text-amber-800" aria-hidden="true">
+                  <span className="h-px flex-1 bg-amber-300" />
+                  <span className="text-sm">۞</span>
+                  <span className="h-px flex-1 bg-amber-300" />
+                </div>
+                <h3 className="text-center text-xl font-semibold text-emerald-950 sm:text-2xl">
+                  {surah?.name}
+                </h3>
+                {surah && surah.number !== 1 && surah.number !== 9 && (
+                  <p
                     lang="ar"
                     dir="rtl"
-                    className="block text-3xl leading-[2.4] text-slate-900 sm:text-4xl"
+                    className="my-7 text-center text-3xl leading-relaxed text-slate-900 sm:text-4xl"
+                    style={{ fontFamily: '"Noto Naskh Arabic", "Amiri", serif' }}
                   >
-                    {ayah.text}
-                  </span>
-                </button>
-              ))}
+                    بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
+                  </p>
+                )}
+                <div
+                  lang="ar"
+                  dir="rtl"
+                  className="text-center text-[2rem] leading-[2.35] text-slate-900 sm:text-[2.5rem] sm:leading-[2.4]"
+                  style={{ fontFamily: '"Noto Naskh Arabic", "Amiri", serif' }}
+                >
+                  {ayahs.map((ayah, index) => (
+                    <button
+                      type="button"
+                      key={`${selectedSurah}-${ayah.numberInSurah}`}
+                      ref={(element) => {
+                        ayahRefs.current[index] = element;
+                      }}
+                      aria-label={translate('Ayah {number}', { number: ayah.numberInSurah })}
+                      aria-current={index === selectedAyahIndex ? 'true' : undefined}
+                      onClick={() => selectAyah(index)}
+                      className={`mx-0.5 inline rounded-lg px-1 align-baseline transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-600 ${
+                        index === selectedAyahIndex && isPlaying
+                          ? 'bg-amber-200 text-amber-950 shadow-sm ring-1 ring-amber-400'
+                          : index === selectedAyahIndex
+                            ? 'bg-emerald-100 text-emerald-950'
+                            : 'hover:bg-amber-50'
+                      }`}
+                    >
+                      {ayah.text}
+                      <span
+                        aria-hidden="true"
+                        className={`mx-1 inline-flex h-7 min-w-7 items-center justify-center rounded-full border align-middle font-sans text-xs leading-none ${
+                          index === selectedAyahIndex && isPlaying
+                            ? 'border-amber-500 bg-amber-50 text-amber-900'
+                            : 'border-amber-300 bg-white text-amber-800'
+                        }`}
+                      >
+                        {ayah.numberInSurah.toLocaleString('ar')}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-6 flex items-center justify-center gap-3 text-amber-800" aria-hidden="true">
+                  <span className="h-px flex-1 bg-amber-300" />
+                  <span className="text-sm">۞</span>
+                  <span className="h-px flex-1 bg-amber-300" />
+                </div>
+              </div>
               {!loadingSurah && !ayahs.length && !error && (
                 <p className="py-8 text-center text-sm text-slate-500">
                   {translate('No ayahs are available for this selection.')}
