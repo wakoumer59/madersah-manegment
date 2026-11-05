@@ -15,5 +15,21 @@ service firebase.storage {
           'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         ];
     }
+    match /boardMedia/{uploaderUid}/{institutionId}/{fileName} {
+      allow read, delete: if request.auth != null &&
+        request.auth.uid == uploaderUid;
+      allow create, update: if request.auth != null &&
+        request.auth.uid == uploaderUid &&
+        (
+          (
+            request.resource.contentType in ['image/jpeg', 'image/png', 'image/webp'] &&
+            request.resource.size <= 10 * 1024 * 1024
+          ) ||
+          (
+            request.resource.contentType in ['video/mp4', 'video/webm'] &&
+            request.resource.size <= 25 * 1024 * 1024
+          )
+        );
+    }
   }
 }

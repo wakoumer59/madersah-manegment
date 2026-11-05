@@ -42,6 +42,38 @@ describe('material file ownership', () => {
     );
   });
 
+  describe('student board media', () => {
+    it('allows the uploader to upload supported board images and videos only', async () => {
+      const storage = env.authenticatedContext('teacherA').storage();
+      await assertSucceeds(
+        uploadBytes(
+          ref(storage, 'boardMedia/teacherA/instA/post1.jpg'),
+          new Blob(['image'], { type: 'image/jpeg' }),
+        ),
+      );
+      await assertSucceeds(
+        uploadBytes(
+          ref(storage, 'boardMedia/teacherA/instA/post2.mp4'),
+          new Blob(['video'], { type: 'video/mp4' }),
+        ),
+      );
+      await assertFails(
+        uploadBytes(
+          ref(storage, 'boardMedia/teacherA/instA/script.exe'),
+          new Blob(['content'], { type: 'application/x-msdownload' }),
+        ),
+      );
+
+      const otherStorage = env.authenticatedContext('teacherB').storage();
+      await assertFails(
+        uploadBytes(
+          ref(otherStorage, 'boardMedia/teacherA/instA/post3.jpg'),
+          new Blob(['image'], { type: 'image/jpeg' }),
+        ),
+      );
+    });
+  });
+
   it('rejects unauthenticated and unsupported uploads', async () => {
     const unauthenticatedStorage = env.unauthenticatedContext().storage();
     await assertFails(

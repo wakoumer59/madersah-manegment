@@ -103,6 +103,16 @@
           }
         }
       },
+      "questionBank": {
+        ".read": "(auth != null && root.child('users').child(auth.uid).child('status').val() == 'active' && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId && (root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' || root.child('users').child(auth.uid).child('role').val() == 'teacher')) && root.child('users').child(auth.uid).child('mustChangePassword').val() != true",
+        ".write": "(auth != null && root.child('users').child(auth.uid).child('status').val() == 'active' && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId && root.child('institutions').child($institutionId).child('status').val() == 'active' && (root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' || root.child('users').child(auth.uid).child('role').val() == 'teacher')) && root.child('users').child(auth.uid).child('mustChangePassword').val() != true",
+        ".indexOn": ["createdAt"]
+      },
+      "boardPosts": {
+        ".read": "(auth != null && root.child('users').child(auth.uid).child('status').val() == 'active' && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId && (root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' || root.child('users').child(auth.uid).child('role').val() == 'teacher' || root.child('users').child(auth.uid).child('role').val() == 'student')) && root.child('users').child(auth.uid).child('mustChangePassword').val() != true",
+        ".write": "(auth != null && root.child('users').child(auth.uid).child('status').val() == 'active' && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId && root.child('institutions').child($institutionId).child('status').val() == 'active' && (root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' || root.child('users').child(auth.uid).child('role').val() == 'teacher')) && root.child('users').child(auth.uid).child('mustChangePassword').val() != true",
+        ".indexOn": ["createdAt"]
+      },
       "materials": {
         ".read": "(auth != null && root.child('users').child(auth.uid).child('status').val() == 'active' && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId && (root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' || root.child('users').child(auth.uid).child('role').val() == 'teacher' || root.child('users').child(auth.uid).child('role').val() == 'student')) && root.child('users').child(auth.uid).child('mustChangePassword').val() != true",
         ".write": "(auth != null && root.child('users').child(auth.uid).child('status').val() == 'active' && root.child('users').child(auth.uid).child('institutionId').val() == $institutionId && root.child('institutions').child($institutionId).child('status').val() == 'active' && (root.child('users').child(auth.uid).child('role').val() == 'institutionAdmin' || root.child('users').child(auth.uid).child('role').val() == 'teacher')) && root.child('users').child(auth.uid).child('mustChangePassword').val() != true",

@@ -1,5 +1,6 @@
 import { translate  } from '@/i18n';
-import { BookOpen, BarChart3, CalendarCheck, ClipboardList, School } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { BookOpen, BarChart3, CalendarCheck, ClipboardList, MessageSquareText, School } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { Card } from '@/components/common/Card';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -19,6 +20,20 @@ export default function StudentHomePage() {
         <p className="mt-0.5 text-sm text-slate-500">
           {translate("Here is what is happening with your learning.")}{' '}</p>
       </div>
+
+      <Link
+        to="/student/board"
+        className="mb-5 flex min-h-16 items-center gap-3 rounded-2xl border border-indigo-100 bg-indigo-50 p-4 text-indigo-900 transition-colors hover:bg-indigo-100"
+      >
+        <MessageSquareText className="h-5 w-5 shrink-0" aria-hidden="true" />
+        <span className="min-w-0 flex-1">
+          <span className="block font-semibold">{translate('Student Board')}</span>
+          <span className="block text-sm text-indigo-800">
+            {translate('Read the latest school updates and posts.')}
+          </span>
+        </span>
+        <span aria-hidden="true" className="text-xl">→</span>
+      </Link>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label={translate("My class")} value={DASH} caption={translate("Assigned by your school")} icon={School} tone="sky" />

@@ -7,12 +7,13 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
 import type { User } from 'firebase/auth';
 import { getFirebaseConfigError } from '@/firebase/config';
-import { signOutUser, watchAuth } from '@/services/authService';
+import { signIn as signInUser, signOutUser, watchAuth } from '@/services/authService';
 import { getMyUser } from '@/services/userService';
 import type { UserRecord, UserRole } from '@/types';
 
@@ -33,6 +34,7 @@ interface AuthContextValue {
   isStudent: boolean;
   isPending: boolean;
   refreshUserRecord: () => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -58,6 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [userRecord, setUserRecord] = useState<UserRecord | null>(null);
   const [accountError, setAccountError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const authStateVersion = useRef(0);
 
   useEffect(() => {
     if (configError) {
@@ -67,6 +70,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     const unsubscribe = watchAuth(async (user) => {
       if (cancelled) return;
+      const version = ++authStateVersion.current;
+      setLoading(true);
       setAuthUser(user);
       setAccountError(null);
       if (!user) {
@@ -74,9 +79,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false);
         return;
       }
+      setUserRecord(null);
       try {
         const record = await loadRecordWithRetry(user.uid, () => cancelled);
-        if (cancelled) return;
+        if (cancelled || version !== authStateVersion.current) return;
         if (record) {
           setUserRecord(record);
         } else {
@@ -87,20 +93,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           );
         }
       } catch {
-        if (cancelled) return;
+        if (cancelled || version !== authStateVersion.current) return;
         setUserRecord(null);
         setAccountError(
           'Could not load your account. Check your connection and try again.',
         );
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled && version === authStateVersion.current) setLoading(false);
       }
     });
     return () => {
       cancelled = true;
+      authStateVersion.current += 1;
       unsubscribe();
     };
   }, [configError]);
+
+  const signIn = useCallback(async (email: string, password: string) => {
+    setLoading(true);
+    setAccountError(null);
+    try {
+      const user = await signInUser(email, password);
+      const version = ++authStateVersion.current;
+      setAuthUser(user);
+      setUserRecord(null);
+      try {
+        const record = await loadRecordWithRetry(
+          user.uid,
+          () => version !== authStateVersion.current,
+        );
+        if (version !== authStateVersion.current) return;
+        setUserRecord(record);
+        if (!record) {
+          setAccountError(
+            'Your account record could not be loaded. It may not be fully set up yet. ' +
+              'Please contact your administrator or try again later.',
+          );
+        }
+      } catch {
+        if (version !== authStateVersion.current) return;
+        setUserRecord(null);
+        setAccountError('Could not load your account. Check your connection and try again.');
+      } finally {
+        if (version === authStateVersion.current) setLoading(false);
+      }
+    } catch (error) {
+      setLoading(false);
+      throw error;
+    }
+  }, []);
 
   const refreshUserRecord = useCallback(async () => {
     if (!authUser) return;
@@ -127,10 +168,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isStaff: role === 'institutionAdmin' || role === 'teacher',
       isStudent: role === 'student',
       isPending: role === 'pending',
+      signIn,
       refreshUserRecord,
       signOut,
     };
-  }, [authUser, userRecord, loading, configError, accountError, refreshUserRecord, signOut]);
+  }, [authUser, userRecord, loading, configError, accountError, signIn, refreshUserRecord, signOut]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

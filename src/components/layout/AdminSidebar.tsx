@@ -11,6 +11,7 @@ import {
   GraduationCap,
   Inbox,
   LayoutDashboard,
+  MessageSquareText,
   School,
   Settings,
   Users,
@@ -57,7 +58,7 @@ export function getNavSections(): Record<ShellVariant, NavSection[]> {
     {
       title: translate('Assessments'),
       items: [
-        { label: strings.nav.tests, to: '/admin/tests', icon: ClipboardList },
+        { label: strings.nav.tests, to: '/admin/questions', icon: ClipboardList },
         { label: strings.nav.testResults, to: '/admin/results', icon: BarChart3 },
       ],
     },
@@ -65,6 +66,7 @@ export function getNavSections(): Record<ShellVariant, NavSection[]> {
       title: translate('Content'),
       items: [
         { label: strings.nav.materials, to: '/admin/materials', icon: FolderOpen },
+        { label: strings.nav.board, to: '/admin/board', icon: MessageSquareText },
         { label: strings.nav.reports, to: '/admin/reports', icon: FileText, soon: true },
       ],
     },
@@ -81,6 +83,7 @@ export function getNavSections(): Record<ShellVariant, NavSection[]> {
         { label: strings.nav.myAttendance, to: '/student/attendance', icon: CalendarCheck, soon: true },
         { label: strings.nav.myTests, to: '/student/tests', icon: ClipboardList },
         { label: strings.nav.myResults, to: '/student/results', icon: BarChart3 },
+        { label: strings.nav.board, to: '/student/board', icon: MessageSquareText },
         { label: strings.nav.materials, to: '/student/materials', icon: FolderOpen },
       ],
     },

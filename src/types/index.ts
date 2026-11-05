@@ -159,6 +159,19 @@ export interface Material {
   downloadCount: number;
 }
 
+export interface BoardPost {
+  id: string;
+  title: string;
+  body: string;
+  authorUid: string;
+  authorName: string;
+  createdAt: number;
+  mediaUrl: string | null;
+  mediaPath: string | null;
+  mediaType: 'image' | 'video' | null;
+  mediaName: string | null;
+}
+
 export interface InstitutionRequest {
   id: string;
   institutionName: string;

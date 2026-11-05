@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { useAuth } from '@/contexts/AuthContext';
 import { RequireAuth, RequireRole, homePathForRole } from '@/routes/guards';
+import { SetupNoticePage } from '@/pages/SetupNoticePage';
 import NotFoundPage from '@/pages/NotFoundPage';
 
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage'));
@@ -22,8 +23,9 @@ const TeachersPage = lazy(() => import('@/pages/admin/TeachersPage'));
 const ClassesPage = lazy(() => import('@/pages/admin/ClassesPage'));
 const SubjectsPage = lazy(() => import('@/pages/admin/SubjectsPage'));
 const AttendancePage = lazy(() => import('@/pages/admin/AttendancePage'));
-const TestListPage = lazy(() => import('@/pages/admin/TestListPage'));
 const TestBuilderPage = lazy(() => import('@/pages/admin/TestBuilderPage'));
+const QuestionsPage = lazy(() => import('@/pages/admin/QuestionsPage'));
+const AdminBoardPage = lazy(() => import('@/pages/admin/BoardPage'));
 const TestResultsPage = lazy(() => import('@/pages/admin/TestResultsPage'));
 const StudentTestListPage = lazy(() => import('@/pages/student/TestListPage'));
 const TakeTestPage = lazy(() => import('@/pages/student/TakeTestPage'));
@@ -32,12 +34,16 @@ const StudentHomePage = lazy(() => import('@/pages/student/StudentHomePage'));
 const AdminMaterialListPage = lazy(() => import('@/pages/admin/MaterialListPage'));
 const AdminMaterialEditPage = lazy(() => import('@/pages/admin/MaterialEditPage'));
 const StudentMaterialListPage = lazy(() => import('@/pages/student/MaterialListPage'));
+const StudentBoardPage = lazy(() => import('@/pages/student/BoardPage'));
 
 function HomeRedirect() {
-  const { authUser, userRecord, loading, configError } = useAuth();
+  const { authUser, userRecord, loading, configError, accountError } = useAuth();
   const location = useLocation();
   if (configError) return <LoadingSpinner fullPage />;
   if (loading) return <LoadingSpinner fullPage />;
+  if (authUser && !userRecord && accountError) {
+    return <SetupNoticePage title="Account problem" message={accountError} />;
+  }
   if (!authUser) return <Navigate to="/login" replace state={{ from: location }} />;
   if (userRecord?.mustChangePassword) return <Navigate to="/change-password" replace />;
   return <Navigate to={homePathForRole(userRecord?.role ?? null)} replace />;
@@ -166,9 +172,13 @@ export function AppRoutes() {
         />
         <Route
           path="/admin/tests"
+          element={<Navigate to="/admin/questions" replace />}
+        />
+        <Route
+          path="/admin/questions"
           element={
             <RequireRole roles={['institutionAdmin', 'teacher']}>
-              <TestListPage />
+              <QuestionsPage />
             </RequireRole>
           }
         />
@@ -193,6 +203,14 @@ export function AppRoutes() {
           element={
             <RequireRole roles={['institutionAdmin', 'teacher']}>
               <AdminMaterialListPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/admin/board"
+          element={
+            <RequireRole roles={['institutionAdmin', 'teacher']}>
+              <AdminBoardPage />
             </RequireRole>
           }
         />
@@ -251,6 +269,14 @@ export function AppRoutes() {
           element={
             <RequireRole roles={['student']}>
               <StudentMaterialListPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/student/board"
+          element={
+            <RequireRole roles={['student']}>
+              <StudentBoardPage />
             </RequireRole>
           }
         />

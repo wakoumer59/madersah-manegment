@@ -43,8 +43,13 @@ export async function signUp(
   }
 }
 
-export async function signIn(email: string, password: string): Promise<void> {
-  await signInWithEmailAndPassword(getFirebaseAuth(), email.trim().toLowerCase(), password);
+export async function signIn(email: string, password: string): Promise<User> {
+  const credential = await signInWithEmailAndPassword(
+    getFirebaseAuth(),
+    email.trim().toLowerCase(),
+    password,
+  );
+  return credential.user;
 }
 
 export async function signOutUser(): Promise<void> {

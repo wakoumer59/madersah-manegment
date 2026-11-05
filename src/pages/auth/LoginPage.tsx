@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { AuthLayout } from '@/components/layout/AuthLayout';
 import { Button } from '@/components/common/Button';
 import { FormInput } from '@/components/common/FormInput';
-import { signIn } from '@/services/authService';
+import { useAuth } from '@/contexts/AuthContext';
 import { strings } from '@/strings';
 import { mapAuthError } from '@/utils/errors';
 import {
@@ -15,6 +15,7 @@ import {
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const { signIn } = useAuth();
   const [values, setValues] = useState<LoginFormValues>({ email: '', password: '' });
   const [fieldErrors, setFieldErrors] = useState<FieldErrors<LoginFormValues>>({});
   const [formError, setFormError] = useState<string | null>(null);

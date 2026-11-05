@@ -408,6 +408,7 @@ describe('tenant data access', () => {
         durationMin: 30, maxScore: 1, status: 'published',
         showResults: false, questionCount: 1, createdBy: ADMIN_A, createdAt: 1000,
       });
+
       await set(ref(db, `${INST_A}/tests/test1/_questions/q1`), {
         id: 'q1', type: 'mcq', text: 'Question?', options: { A: 'Answer' }, correct: 'A',
       });
@@ -438,6 +439,51 @@ describe('tenant data access', () => {
     await assertSucceeds(get(ref(studentDb, `${INST_A}/tests/test1/_results/${STUDENT_A}`)));
     await assertFails(get(ref(studentDb, `${INST_A}/tests/test1/_results/${STUDENT_A}x`)));
     await assertFails(get(ref(studentDb, `${INST_B}/testCatalog`)));
+  });
+
+  it('limits the online question bank to staff in their own institution', async () => {
+    const adminDb = dbFor(ADMIN_A, 'admA@test.dev');
+    const question = {
+      id: 'question1',
+      type: 'mcq',
+      text: 'Which answer is correct?',
+      options: { A: 'First', B: 'Second', C: 'Third', D: 'Fourth' },
+      correct: 'B',
+      createdBy: ADMIN_A,
+      createdAt: 1000,
+    };
+    await assertSucceeds(set(ref(adminDb, `${INST_A}/questionBank/question1`), question));
+    await assertSucceeds(get(ref(adminDb, `${INST_A}/questionBank`)));
+    await assertFails(get(ref(adminDb, `${INST_B}/questionBank`)));
+    await assertFails(set(ref(adminDb, `${INST_B}/questionBank/question1`), question));
+
+    const studentDb = dbFor(STUDENT_A, 'stuA@test.dev');
+    await assertFails(get(ref(studentDb, `${INST_A}/questionBank`)));
+    await assertFails(set(ref(studentDb, `${INST_A}/questionBank/question2`), question));
+  });
+
+  it('lets students read their own institution board but only staff publish posts', async () => {
+    const post = {
+      id: 'post1',
+      title: 'School update',
+      body: 'Classes begin tomorrow.',
+      authorUid: ADMIN_A,
+      authorName: 'Test Admin',
+      createdAt: 1000,
+      mediaUrl: null,
+      mediaPath: null,
+      mediaType: null,
+      mediaName: null,
+    };
+    const adminDb = dbFor(ADMIN_A, 'admA@test.dev');
+    await assertSucceeds(set(ref(adminDb, `${INST_A}/boardPosts/post1`), post));
+    await assertSucceeds(get(ref(adminDb, `${INST_A}/boardPosts`)));
+
+    const studentDb = dbFor(STUDENT_A, 'stuA@test.dev');
+    await assertSucceeds(get(ref(studentDb, `${INST_A}/boardPosts`)));
+    await assertFails(get(ref(studentDb, `${INST_B}/boardPosts`)));
+    await assertFails(set(ref(studentDb, `${INST_A}/boardPosts/post2`), post));
+    await assertFails(set(ref(adminDb, `${INST_B}/boardPosts/post1`), post));
   });
 
   it('allows a student to read answers only after submitting their own attempt', async () => {
