@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { BookOpen, ChevronLeft, ChevronRight, Pause, Play, Square } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { Button } from '@/components/common/Button';
@@ -6,7 +6,11 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { useAuth } from '@/contexts/AuthContext';
 import { translate } from '@/i18n';
-import { listQaidaLessons } from '@/services/qaidaService';
+import {
+  getQaidaWordIndexAtCharacter,
+  getQaidaWordRanges,
+  listQaidaLessons,
+} from '@/services/qaidaService';
 import type { QaidaLesson } from '@/types';
 import { errorMessage } from '@/utils/errors';
 
@@ -19,6 +23,7 @@ export default function QaidaReaderPage() {
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [speaking, setSpeaking] = useState(false);
   const [paused, setPaused] = useState(false);
+  const [activeWordIndex, setActiveWordIndex] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -65,12 +70,14 @@ export default function QaidaReaderPage() {
   const selectedIndex = lessons.findIndex((lesson) => lesson.id === selectedId);
   const selectedLesson = lessons[selectedIndex] ?? null;
   const arabicVoice = voices.find((voice) => voice.lang.toLowerCase().startsWith('ar'));
+  const wordRanges = getQaidaWordRanges(selectedLesson?.text ?? '');
 
   const stopReading = () => {
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     utteranceRef.current = null;
     setSpeaking(false);
     setPaused(false);
+    setActiveWordIndex(null);
   };
 
   const startReading = () => {
@@ -89,15 +96,21 @@ export default function QaidaReaderPage() {
     utterance.lang = arabicVoice.lang;
     utterance.voice = arabicVoice;
     utterance.rate = 0.8;
+    utterance.onboundary = (event) => {
+      const wordIndex = getQaidaWordIndexAtCharacter(wordRanges, event.charIndex);
+      if (wordIndex !== null) setActiveWordIndex(wordIndex);
+    };
     utterance.onend = () => {
       utteranceRef.current = null;
       setSpeaking(false);
       setPaused(false);
+      setActiveWordIndex(null);
     };
     utterance.onerror = (event) => {
       utteranceRef.current = null;
       setSpeaking(false);
       setPaused(false);
+      setActiveWordIndex(null);
       if (event.error !== 'canceled' && event.error !== 'interrupted') {
         setError(translate('Voice reading could not start. Try again.'));
       }
@@ -158,13 +171,51 @@ export default function QaidaReaderPage() {
                   </p>
                   <h2 className="mt-1 text-xl font-bold text-slate-900">{selectedLesson.title}</h2>
                 </div>
-                <div
-                  lang="ar"
-                  dir="rtl"
-                  className="min-h-48 whitespace-pre-wrap break-words rounded-xl bg-amber-50/70 p-5 text-center text-3xl leading-[2.4] text-slate-900 sm:p-8 sm:text-4xl"
-                >
-                  {selectedLesson.text}
+                <div className="relative overflow-hidden rounded-[1.75rem] border-4 border-double border-amber-300 bg-[#fffdf5] p-5 shadow-[0_12px_36px_rgba(120,83,31,0.12)] sm:p-8">
+                  <span className="absolute left-2 top-1 text-xl text-emerald-700" aria-hidden="true">❧</span>
+                  <span className="absolute right-2 top-1 text-xl text-emerald-700" aria-hidden="true">❧</span>
+                  <span className="absolute bottom-1 left-2 rotate-180 text-xl text-emerald-700" aria-hidden="true">❧</span>
+                  <span className="absolute bottom-1 right-2 rotate-180 text-xl text-emerald-700" aria-hidden="true">❧</span>
+                  <div className="mb-5 flex items-center justify-center gap-3 text-amber-800" aria-hidden="true">
+                    <span className="h-px flex-1 bg-amber-300" />
+                    <span>۞</span>
+                    <span className="h-px flex-1 bg-amber-300" />
+                  </div>
+                  <div
+                    lang="ar"
+                    dir="rtl"
+                    className="min-h-48 whitespace-pre-wrap break-words py-2 text-center text-3xl leading-[2.5] text-slate-900 sm:text-4xl"
+                    style={{ fontFamily: '"Noto Naskh Arabic", "Amiri", serif' }}
+                  >
+                    {wordRanges.map((word, index) => (
+                      <Fragment key={`${word.start}-${word.end}`}>
+                        {selectedLesson.text.slice(
+                          index === 0 ? 0 : wordRanges[index - 1].end,
+                          word.start,
+                        )}
+                        <span
+                          className={`rounded-md px-1 transition-colors ${
+                            speaking && activeWordIndex === index
+                              ? 'bg-amber-200 text-amber-950 ring-1 ring-amber-400'
+                              : ''
+                          }`}
+                        >
+                          {word.text}
+                        </span>
+                      </Fragment>
+                    ))}
+                    {wordRanges.length > 0 &&
+                      selectedLesson.text.slice(wordRanges[wordRanges.length - 1].end)}
+                  </div>
+                  <div className="mt-5 flex items-center justify-center gap-3 text-amber-800" aria-hidden="true">
+                    <span className="h-px flex-1 bg-amber-300" />
+                    <span>۞</span>
+                    <span className="h-px flex-1 bg-amber-300" />
+                  </div>
                 </div>
+                <p className="mt-2 text-center text-xs text-slate-500">
+                  {translate('Amber marks the word currently spoken when your device provides word timing.')}
+                </p>
                 <div className="mt-5 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
                   <Button
                     variant="secondary"

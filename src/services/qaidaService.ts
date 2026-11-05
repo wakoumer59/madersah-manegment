@@ -15,6 +15,30 @@ const LESSONS_PATH = 'qaidaLessons';
 const MAX_TITLE_LENGTH = 100;
 const MAX_TEXT_LENGTH = 20_000;
 
+export interface QaidaWordRange {
+  text: string;
+  start: number;
+  end: number;
+}
+
+export function getQaidaWordRanges(text: string): QaidaWordRange[] {
+  const words: QaidaWordRange[] = [];
+  for (const match of text.matchAll(/\S+/gu)) {
+    const start = match.index;
+    words.push({ text: match[0], start, end: start + match[0].length });
+  }
+  return words;
+}
+
+export function getQaidaWordIndexAtCharacter(
+  words: QaidaWordRange[],
+  charIndex: number,
+): number | null {
+  if (!Number.isInteger(charIndex) || charIndex < 0) return null;
+  const index = words.findIndex((word) => charIndex >= word.start && charIndex < word.end);
+  return index < 0 ? null : index;
+}
+
 export function validateQaidaLesson(title: string, text: string): string | null {
   if (!title.trim()) return 'Lesson title is required.';
   if (title.trim().length > MAX_TITLE_LENGTH) return 'Lesson title is too long.';

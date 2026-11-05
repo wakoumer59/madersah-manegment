@@ -184,6 +184,9 @@ export default function QuranReaderPage() {
             {translate('Source')}
           </a>
         </p>
+        <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950">
+          {translate('The amber highlight marks the active ayah. This reciter audio does not provide word or letter timing.')}
+        </p>
       </header>
 
       {error && (
@@ -344,7 +347,11 @@ export default function QuranReaderPage() {
 
           {selectedAyah && !loadingSurah && (
             <section className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur sm:bottom-4 sm:left-1/2 sm:right-auto sm:w-[min(42rem,calc(100%-2rem))] sm:-translate-x-1/2 sm:rounded-2xl sm:border sm:p-4">
-              <div className="mx-auto flex max-w-4xl items-center gap-3">
+              <div
+                role="group"
+                aria-label={translate('Audio controls')}
+                className="mx-auto flex max-w-4xl items-center gap-3"
+              >
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-slate-900">
                     {surah?.englishName} · {translate('Ayah')} {selectedAyah.numberInSurah}
@@ -354,12 +361,17 @@ export default function QuranReaderPage() {
                 <Button
                   variant="secondary"
                   aria-label={translate('Previous ayah')}
+                  title={translate('Previous ayah')}
                   disabled={selectedAyahIndex === 0}
                   onClick={() => selectAyah(Math.max(0, selectedAyahIndex - 1))}
                 >
                   <ChevronLeft className="h-4 w-4" aria-hidden="true" />
                 </Button>
-                <Button onClick={() => void playPause()} aria-label={translate('Play or pause recitation')}>
+                <Button
+                  onClick={() => void playPause()}
+                  aria-label={translate(isPlaying ? 'Pause recitation' : 'Play recitation')}
+                  title={translate(isPlaying ? 'Pause recitation' : 'Play recitation')}
+                >
                   {isPlaying
                     ? <Pause className="h-4 w-4" aria-hidden="true" />
                     : <Play className="h-4 w-4" aria-hidden="true" />}
@@ -371,6 +383,7 @@ export default function QuranReaderPage() {
                 <Button
                   variant="secondary"
                   aria-label={translate('Next ayah')}
+                  title={translate('Next ayah')}
                   disabled={selectedAyahIndex >= ayahs.length - 1}
                   onClick={() => selectAyah(Math.min(ayahs.length - 1, selectedAyahIndex + 1))}
                 >
