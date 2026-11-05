@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { fetchQuranContent } from '../../server/quranFoundation.js';
+import { fetchQuranContent } from '../server/quranFoundation.js';
 
 function respond(
   res: ServerResponse,
@@ -20,11 +20,10 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     return respond(res, 405, { error: 'Method not allowed.' });
   }
 
-  const pathname = new URL(req.url ?? '/', 'http://localhost').pathname;
-  const chapterMatch = pathname.match(/^\/api\/quran\/verses\/by_chapter\/(\d+)$/);
-  const chapterNumber = chapterMatch ? Number(chapterMatch[1]) : 0;
-  if (!chapterMatch || !Number.isInteger(chapterNumber) || chapterNumber < 1 || chapterNumber > 114) {
-    return respond(res, 404, { error: 'Quran content endpoint not found.' });
+  const requestUrl = new URL(req.url ?? '/', 'http://localhost');
+  const chapterNumber = Number(requestUrl.searchParams.get('chapter'));
+  if (!Number.isInteger(chapterNumber) || chapterNumber < 1 || chapterNumber > 114) {
+    return respond(res, 400, { error: 'Choose a valid surah.' });
   }
 
   try {

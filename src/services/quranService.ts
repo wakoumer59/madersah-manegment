@@ -250,7 +250,7 @@ export async function getQuranSurah(
   ));
   let mushafResponse: Response;
   try {
-    mushafResponse = await fetch(`/api/quran/verses/by_chapter/${surahNumber}`, { signal });
+    mushafResponse = await fetch(`/api/quran?chapter=${surahNumber}`, { signal });
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') throw error;
     throw new Error('Could not load Madinah Mushaf text. Check your connection and retry.');
