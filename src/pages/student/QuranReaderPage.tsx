@@ -346,7 +346,7 @@ export default function QuranReaderPage() {
           )}
 
           {selectedAyah && !loadingSurah && (
-            <section className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur sm:bottom-4 sm:left-1/2 sm:right-auto sm:w-[min(42rem,calc(100%-2rem))] sm:-translate-x-1/2 sm:rounded-2xl sm:border sm:p-4">
+            <section className="fixed inset-x-0 bottom-[calc(56px+env(safe-area-inset-bottom))] z-40 border-t border-slate-200 bg-white/95 p-3 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur sm:bottom-4 sm:left-1/2 sm:right-auto sm:w-[min(42rem,calc(100%-2rem))] sm:-translate-x-1/2 sm:rounded-2xl sm:border sm:p-4">
               <div
                 role="group"
                 aria-label={translate('Audio controls')}
@@ -364,6 +364,7 @@ export default function QuranReaderPage() {
                   title={translate('Previous ayah')}
                   disabled={selectedAyahIndex === 0}
                   onClick={() => selectAyah(Math.max(0, selectedAyahIndex - 1))}
+                  className="!h-11 !min-h-11 !w-11 !shrink-0 !px-0 sm:!w-auto sm:!px-4"
                 >
                   <ChevronLeft className="h-4 w-4" aria-hidden="true" />
                 </Button>
@@ -371,13 +372,20 @@ export default function QuranReaderPage() {
                   onClick={() => void playPause()}
                   aria-label={translate(isPlaying ? 'Pause recitation' : 'Play recitation')}
                   title={translate(isPlaying ? 'Pause recitation' : 'Play recitation')}
+                  className="!h-11 !min-h-11 !w-11 !shrink-0 !px-0 sm:!w-auto sm:!px-4"
                 >
                   {isPlaying
                     ? <Pause className="h-4 w-4" aria-hidden="true" />
                     : <Play className="h-4 w-4" aria-hidden="true" />}
                   <span className="hidden sm:inline">{translate(isPlaying ? 'Pause' : 'Play')}</span>
                 </Button>
-                <Button variant="secondary" onClick={replayAyah} aria-label={translate('Replay ayah')}>
+                <Button
+                  variant="secondary"
+                  onClick={replayAyah}
+                  aria-label={translate('Replay ayah')}
+                  title={translate('Replay ayah')}
+                  className="!h-11 !min-h-11 !w-11 !shrink-0 !px-0 sm:!w-auto sm:!px-4"
+                >
                   <RotateCcw className="h-4 w-4" aria-hidden="true" />
                 </Button>
                 <Button
@@ -386,6 +394,7 @@ export default function QuranReaderPage() {
                   title={translate('Next ayah')}
                   disabled={selectedAyahIndex >= ayahs.length - 1}
                   onClick={() => selectAyah(Math.min(ayahs.length - 1, selectedAyahIndex + 1))}
+                  className="!h-11 !min-h-11 !w-11 !shrink-0 !px-0 sm:!w-auto sm:!px-4"
                 >
                   <ChevronRight className="h-4 w-4" aria-hidden="true" />
                 </Button>
