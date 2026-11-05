@@ -67,6 +67,7 @@ export function getNavSections(): Record<ShellVariant, NavSection[]> {
       items: [
         { label: strings.nav.materials, to: '/admin/materials', icon: FolderOpen },
         { label: strings.nav.board, to: '/admin/board', icon: MessageSquareText },
+        { label: strings.nav.qaida, to: '/admin/qaida', icon: BookOpen },
         { label: strings.nav.reports, to: '/admin/reports', icon: FileText, soon: true },
       ],
     },
@@ -84,6 +85,8 @@ export function getNavSections(): Record<ShellVariant, NavSection[]> {
         { label: strings.nav.myTests, to: '/student/tests', icon: ClipboardList },
         { label: strings.nav.myResults, to: '/student/results', icon: BarChart3 },
         { label: strings.nav.board, to: '/student/board', icon: MessageSquareText },
+        { label: strings.nav.qaida, to: '/student/qaida', icon: BookOpen },
+        { label: strings.nav.quran, to: '/student/quran', icon: BookOpen },
         { label: strings.nav.materials, to: '/student/materials', icon: FolderOpen },
       ],
     },

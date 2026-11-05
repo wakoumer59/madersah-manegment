@@ -486,6 +486,33 @@ describe('tenant data access', () => {
     await assertFails(set(ref(adminDb, `${INST_B}/boardPosts/post1`), post));
   });
 
+  it('lets students read their institution Qaida lessons but only staff manage them', async () => {
+    const lesson = {
+      id: 'lesson1',
+      order: 1,
+      title: 'Lesson 1',
+      text: 'Authorized lesson text',
+      createdBy: ADMIN_A,
+      createdAt: 1000,
+    };
+    const adminDb = dbFor(ADMIN_A, 'admA@test.dev');
+    await assertSucceeds(set(ref(adminDb, `${INST_A}/qaidaLessons/lesson1`), lesson));
+
+    const studentDb = dbFor(STUDENT_A, 'stuA@test.dev');
+    await assertSucceeds(get(ref(studentDb, `${INST_A}/qaidaLessons`)));
+    await assertFails(set(ref(studentDb, `${INST_A}/qaidaLessons/lesson2`), {
+      ...lesson,
+      id: 'lesson2',
+      createdBy: STUDENT_A,
+    }));
+    await assertFails(get(ref(studentDb, `${INST_B}/qaidaLessons`)));
+    await assertFails(set(ref(adminDb, `${INST_A}/qaidaLessons/invalid`), {
+      ...lesson,
+      id: 'invalid',
+      order: 0,
+    }));
+  });
+
   it('allows a student to read answers only after submitting their own attempt', async () => {
     await env.withSecurityRulesDisabled(async (ctx) => {
       const db = ctx.database();

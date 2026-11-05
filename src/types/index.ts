@@ -172,6 +172,15 @@ export interface BoardPost {
   mediaName: string | null;
 }
 
+export interface QaidaLesson {
+  id: string;
+  order: number;
+  title: string;
+  text: string;
+  createdBy: string;
+  createdAt: number;
+}
+
 export interface InstitutionRequest {
   id: string;
   institutionName: string;

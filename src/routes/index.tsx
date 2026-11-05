@@ -35,6 +35,9 @@ const AdminMaterialListPage = lazy(() => import('@/pages/admin/MaterialListPage'
 const AdminMaterialEditPage = lazy(() => import('@/pages/admin/MaterialEditPage'));
 const StudentMaterialListPage = lazy(() => import('@/pages/student/MaterialListPage'));
 const StudentBoardPage = lazy(() => import('@/pages/student/BoardPage'));
+const QaidaLessonsPage = lazy(() => import('@/pages/admin/QaidaLessonsPage'));
+const QaidaReaderPage = lazy(() => import('@/pages/student/QaidaReaderPage'));
+const QuranReaderPage = lazy(() => import('@/pages/student/QuranReaderPage'));
 
 function HomeRedirect() {
   const { authUser, userRecord, loading, configError, accountError } = useAuth();
@@ -215,6 +218,14 @@ export function AppRoutes() {
           }
         />
         <Route
+          path="/admin/qaida"
+          element={
+            <RequireRole roles={['institutionAdmin', 'teacher']}>
+              <QaidaLessonsPage />
+            </RequireRole>
+          }
+        />
+        <Route
           path="/admin/materials/:materialId"
           element={
             <RequireRole roles={['institutionAdmin', 'teacher']}>
@@ -277,6 +288,22 @@ export function AppRoutes() {
           element={
             <RequireRole roles={['student']}>
               <StudentBoardPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/student/qaida"
+          element={
+            <RequireRole roles={['student']}>
+              <QaidaReaderPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/student/quran"
+          element={
+            <RequireRole roles={['student']}>
+              <QuranReaderPage />
             </RequireRole>
           }
         />

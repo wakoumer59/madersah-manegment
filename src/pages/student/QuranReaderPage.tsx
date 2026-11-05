@@ -1,0 +1,344 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { BookText, ChevronLeft, ChevronRight, LoaderCircle, Pause, Play, RotateCcw } from 'lucide-react';
+import { AppShell } from '@/components/layout/AppShell';
+import { Button } from '@/components/common/Button';
+import { LoadingSpinner } from '@/components/common/LoadingSpinner';
+import { Select } from '@/components/common/Select';
+import { translate } from '@/i18n';
+import {
+  getQuranSurah,
+  listQuranReciters,
+  listQuranSurahs,
+  type QuranAyah,
+  type QuranReciter,
+  type QuranSurah,
+} from '@/services/quranService';
+import { errorMessage } from '@/utils/errors';
+
+export default function QuranReaderPage() {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const autoplayNextRef = useRef(false);
+  const ayahRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [surahs, setSurahs] = useState<QuranSurah[]>([]);
+  const [reciters, setReciters] = useState<QuranReciter[]>([]);
+  const [selectedSurah, setSelectedSurah] = useState('');
+  const [selectedReciter, setSelectedReciter] = useState('');
+  const [ayahs, setAyahs] = useState<QuranAyah[]>([]);
+  const [selectedAyahIndex, setSelectedAyahIndex] = useState(0);
+  const [loadingCatalog, setLoadingCatalog] = useState(true);
+  const [catalogAttempt, setCatalogAttempt] = useState(0);
+  const [loadingSurah, setLoadingSurah] = useState(false);
+  const [audioError, setAudioError] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadCatalog = useCallback(async (signal: AbortSignal) => {
+    setLoadingCatalog(true);
+    setError(null);
+    try {
+      const [surahList, reciterList] = await Promise.all([
+        listQuranSurahs(signal),
+        listQuranReciters(signal),
+      ]);
+      if (signal.aborted) return;
+      setSurahs(surahList);
+      setReciters(reciterList);
+      setSelectedSurah(String(surahList[0].number));
+      const preferred = reciterList.find((item) => item.identifier === 'ar.alafasy');
+      setSelectedReciter(preferred?.identifier ?? reciterList[0].identifier);
+    } catch (loadError) {
+      if (!signal.aborted) setError(errorMessage(loadError));
+    } finally {
+      if (!signal.aborted) setLoadingCatalog(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void loadCatalog(controller.signal);
+    return () => controller.abort();
+  }, [catalogAttempt, loadCatalog]);
+
+  const loadSurah = useCallback(async (surah: string, reciter: string, signal: AbortSignal) => {
+    if (!surah || !reciter) return;
+    setLoadingSurah(true);
+    setAyahs([]);
+    setSelectedAyahIndex(0);
+    setAudioError(false);
+    setIsPlaying(false);
+    setError(null);
+    try {
+      const verses = await getQuranSurah(Number(surah), reciter, signal);
+      if (!signal.aborted) setAyahs(verses);
+    } catch (loadError) {
+      if (!signal.aborted) setError(errorMessage(loadError));
+    } finally {
+      if (!signal.aborted) setLoadingSurah(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!selectedSurah || !selectedReciter) return;
+    const controller = new AbortController();
+    void loadSurah(selectedSurah, selectedReciter, controller.signal);
+    return () => controller.abort();
+  }, [selectedSurah, selectedReciter, loadSurah]);
+
+  useEffect(() => {
+    if (!autoplayNextRef.current) return;
+    autoplayNextRef.current = false;
+    void audioRef.current?.play().catch(() => {
+      setError(translate('Tap play to continue listening.'));
+    });
+  }, [selectedAyahIndex]);
+
+  useEffect(() => {
+    if (selectedAyahIndex === 0) return;
+    ayahRefs.current[selectedAyahIndex]?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center',
+    });
+  }, [selectedAyahIndex]);
+
+  const surah = surahs.find((item) => String(item.number) === selectedSurah);
+  const reciter = reciters.find((item) => item.identifier === selectedReciter);
+  const selectedAyah = ayahs[selectedAyahIndex];
+
+  const handleEnded = () => {
+    if (selectedAyahIndex >= ayahs.length - 1) {
+      setIsPlaying(false);
+      return;
+    }
+    autoplayNextRef.current = true;
+    setSelectedAyahIndex((current) => current + 1);
+  };
+
+  const selectAyah = (index: number) => {
+    autoplayNextRef.current = false;
+    setAudioError(false);
+    setIsPlaying(false);
+    setSelectedAyahIndex(index);
+  };
+
+  const playPause = async () => {
+    const audio = audioRef.current;
+    if (!audio || !selectedAyah) return;
+    if (audio.paused) {
+      try {
+        await audio.play();
+        setError(null);
+      } catch {
+        setError(translate('Audio could not be played. Try again.'));
+      }
+    } else {
+      audio.pause();
+    }
+  };
+
+  const replayAyah = () => {
+    const audio = audioRef.current;
+    if (!audio || !selectedAyah) return;
+    audio.currentTime = 0;
+    void audio.play().catch(() => setError(translate('Audio could not be played. Try again.')));
+  };
+
+  return (
+    <AppShell variant="student">
+      <header className="mx-auto mb-5 max-w-4xl">
+        <h1 className="flex items-center gap-2 text-2xl font-bold text-slate-900">
+          <BookText className="h-6 w-6 text-emerald-700" aria-hidden="true" />
+          {translate('Quran & Reciters')}
+        </h1>
+        <p className="mt-1 text-sm text-slate-500">
+          {translate('Read the Quran and listen to reciters verse by verse.')}
+        </p>
+        <p className="mt-2 text-xs text-slate-500">
+          {translate('Quran text and streamed audio are provided by AlQuran Cloud. Audio streams online and is not downloaded.')}
+          {' '}
+          <a
+            href="https://alquran.cloud"
+            target="_blank"
+            rel="noreferrer"
+            className="font-medium text-emerald-700 underline"
+          >
+            {translate('Source')}
+          </a>
+        </p>
+      </header>
+
+      {error && (
+        <div role="alert" className="mx-auto mb-4 max-w-4xl rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error}
+          <button
+            type="button"
+            onClick={() => {
+              if (selectedSurah && selectedReciter) {
+                const controller = new AbortController();
+                void loadSurah(selectedSurah, selectedReciter, controller.signal);
+              } else {
+                setCatalogAttempt((current) => current + 1);
+              }
+            }}
+            className="ml-2 font-medium underline"
+          >
+            {translate('Retry')}
+          </button>
+        </div>
+      )}
+
+      {loadingCatalog ? (
+        <LoadingSpinner />
+      ) : (
+        <main className="mx-auto max-w-4xl">
+          <section className="mb-4 grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-2">
+            <Select
+              label={translate('Surah')}
+              value={selectedSurah}
+              onChange={(event) => {
+                autoplayNextRef.current = false;
+                setSelectedSurah(event.target.value);
+              }}
+            >
+              {surahs.map((item) => (
+                <option key={item.number} value={item.number}>
+                  {item.number}. {item.englishName} — {item.name}
+                </option>
+              ))}
+            </Select>
+            <Select
+              label={translate('Reciter')}
+              value={selectedReciter}
+              onChange={(event) => {
+                autoplayNextRef.current = false;
+                setSelectedReciter(event.target.value);
+              }}
+            >
+              {reciters.map((item) => (
+                <option key={item.identifier} value={item.identifier}>
+                  {item.englishName} — {item.name}
+                </option>
+              ))}
+            </Select>
+          </section>
+
+          <section className="mb-4 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-center">
+            <h2 className="text-xl font-bold text-emerald-950">
+              {surah?.name ?? ''}
+            </h2>
+            <p className="mt-1 text-sm text-emerald-900">
+              {surah?.englishName} · {surah?.englishNameTranslation} ·{' '}
+              {surah?.numberOfAyahs} {translate('Ayahs')}
+            </p>
+            {reciter && (
+              <p className="mt-1 text-xs text-emerald-800">
+                {translate('Recited by')} {reciter.englishName}
+              </p>
+            )}
+          </section>
+
+          {loadingSurah ? (
+            <div className="flex min-h-40 items-center justify-center gap-2 text-slate-500">
+              <LoaderCircle className="h-5 w-5 animate-spin" aria-hidden="true" />
+              {translate('Loading surah…')}
+            </div>
+          ) : (
+            <section aria-label={translate('Ayahs')} className="space-y-3 pb-28">
+              {ayahs.map((ayah, index) => (
+                <button
+                  type="button"
+                  key={`${selectedSurah}-${ayah.numberInSurah}`}
+                  ref={(element) => {
+                    ayahRefs.current[index] = element;
+                  }}
+                  aria-current={index === selectedAyahIndex ? 'true' : undefined}
+                  onClick={() => selectAyah(index)}
+                  className={`w-full rounded-2xl border p-4 text-right transition-colors sm:p-5 ${
+                    index === selectedAyahIndex && isPlaying
+                      ? 'border-amber-400 bg-amber-100 shadow-md ring-2 ring-amber-300'
+                      : index === selectedAyahIndex
+                        ? 'border-emerald-300 bg-emerald-50'
+                      : 'border-slate-200 bg-white hover:bg-slate-50'
+                  }`}
+                >
+                  <span className="mb-3 inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-white px-2 text-xs font-semibold text-emerald-800 shadow-sm">
+                    {ayah.numberInSurah}
+                  </span>
+                  <span
+                    lang="ar"
+                    dir="rtl"
+                    className="block text-3xl leading-[2.4] text-slate-900 sm:text-4xl"
+                  >
+                    {ayah.text}
+                  </span>
+                </button>
+              ))}
+              {!loadingSurah && !ayahs.length && !error && (
+                <p className="py-8 text-center text-sm text-slate-500">
+                  {translate('No ayahs are available for this selection.')}
+                </p>
+              )}
+            </section>
+          )}
+
+          {selectedAyah && !loadingSurah && (
+            <section className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur sm:bottom-4 sm:left-1/2 sm:right-auto sm:w-[min(42rem,calc(100%-2rem))] sm:-translate-x-1/2 sm:rounded-2xl sm:border sm:p-4">
+              <div className="mx-auto flex max-w-4xl items-center gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-slate-900">
+                    {surah?.englishName} · {translate('Ayah')} {selectedAyah.numberInSurah}
+                  </p>
+                  <p className="truncate text-xs text-slate-500">{reciter?.englishName}</p>
+                </div>
+                <Button
+                  variant="secondary"
+                  aria-label={translate('Previous ayah')}
+                  disabled={selectedAyahIndex === 0}
+                  onClick={() => selectAyah(Math.max(0, selectedAyahIndex - 1))}
+                >
+                  <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                </Button>
+                <Button onClick={() => void playPause()} aria-label={translate('Play or pause recitation')}>
+                  {isPlaying
+                    ? <Pause className="h-4 w-4" aria-hidden="true" />
+                    : <Play className="h-4 w-4" aria-hidden="true" />}
+                  <span className="hidden sm:inline">{translate(isPlaying ? 'Pause' : 'Play')}</span>
+                </Button>
+                <Button variant="secondary" onClick={replayAyah} aria-label={translate('Replay ayah')}>
+                  <RotateCcw className="h-4 w-4" aria-hidden="true" />
+                </Button>
+                <Button
+                  variant="secondary"
+                  aria-label={translate('Next ayah')}
+                  disabled={selectedAyahIndex >= ayahs.length - 1}
+                  onClick={() => selectAyah(Math.min(ayahs.length - 1, selectedAyahIndex + 1))}
+                >
+                  <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                </Button>
+              </div>
+              <audio
+                ref={audioRef}
+                key={selectedAyah.audio}
+                src={selectedAyah.audio}
+                preload="none"
+                onEnded={handleEnded}
+                onError={() => setAudioError(true)}
+                onPlay={() => {
+                  setAudioError(false);
+                  setIsPlaying(true);
+                }}
+                onPause={() => setIsPlaying(false)}
+                className="mx-auto mt-2 h-10 w-full max-w-4xl"
+                aria-label={translate('Audio recitation')}
+              />
+              {audioError && (
+                <p role="alert" className="mt-1 text-center text-xs text-red-700">
+                  {translate('Audio could not be loaded. Check your connection or choose another reciter.')}
+                </p>
+              )}
+            </section>
+          )}
+        </main>
+      )}
+    </AppShell>
+  );
+}

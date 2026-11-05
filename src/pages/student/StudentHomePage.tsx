@@ -1,6 +1,6 @@
 import { translate  } from '@/i18n';
 import { Link } from 'react-router-dom';
-import { BookOpen, BarChart3, CalendarCheck, ClipboardList, MessageSquareText, School } from 'lucide-react';
+import { BookOpen, BookText, BarChart3, CalendarCheck, ClipboardList, MessageSquareText, School } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { Card } from '@/components/common/Card';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -30,6 +30,32 @@ export default function StudentHomePage() {
           <span className="block font-semibold">{translate('Student Board')}</span>
           <span className="block text-sm text-indigo-800">
             {translate('Read the latest school updates and posts.')}
+          </span>
+        </span>
+        <span aria-hidden="true" className="text-xl">→</span>
+      </Link>
+      <Link
+        to="/student/qaida"
+        className="mb-5 flex min-h-16 items-center gap-3 rounded-2xl border border-amber-100 bg-amber-50 p-4 text-amber-950 transition-colors hover:bg-amber-100"
+      >
+        <BookOpen className="h-5 w-5 shrink-0" aria-hidden="true" />
+        <span className="min-w-0 flex-1">
+          <span className="block font-semibold">{translate('Qaida Nuraniya')}</span>
+          <span className="block text-sm text-amber-900">
+            {translate('Read and listen to your lessons.')}
+          </span>
+        </span>
+        <span aria-hidden="true" className="text-xl">→</span>
+      </Link>
+      <Link
+        to="/student/quran"
+        className="mb-5 flex min-h-16 items-center gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-emerald-950 transition-colors hover:bg-emerald-100"
+      >
+        <BookText className="h-5 w-5 shrink-0" aria-hidden="true" />
+        <span className="min-w-0 flex-1">
+          <span className="block font-semibold">{translate('Quran & Reciters')}</span>
+          <span className="block text-sm text-emerald-900">
+            {translate('Read and listen to the Quran with different reciters.')}
           </span>
         </span>
         <span aria-hidden="true" className="text-xl">→</span>

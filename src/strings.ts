@@ -14,6 +14,8 @@ const englishStrings = {
     testResults: 'Test Results',
     materials: 'Learning Materials',
     board: 'Student Board',
+    qaida: 'Qaida Nuraniya',
+    quran: 'Quran & Reciters',
     reports: 'Reports',
     settings: 'Institution Settings',
     home: 'Home',
