@@ -39,7 +39,29 @@ function toBoardPost(id: string, value: Record<string, unknown>): BoardPost {
     mediaPath: typeof value.mediaPath === 'string' ? value.mediaPath : null,
     mediaType,
     mediaName: typeof value.mediaName === 'string' ? value.mediaName : null,
+    meetUrl: typeof value.meetUrl === 'string' ? value.meetUrl : null,
   };
+}
+
+export function validateGoogleMeetUrl(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  try {
+    const url = new URL(trimmed);
+    if (
+      url.protocol === 'https:' &&
+      url.hostname === 'meet.google.com' &&
+      url.pathname !== '/' &&
+      !url.username &&
+      !url.password
+    ) {
+      return null;
+    }
+  } catch {
+    // Invalid URLs are reported below.
+  }
+  return 'Enter a valid Google Meet link starting with https://meet.google.com/.';
 }
 
 export function validateBoardMedia(file: File): string | null {
@@ -50,11 +72,18 @@ export function validateBoardMedia(file: File): string | null {
   return 'Choose a JPG, PNG, or WebP image, or an MP4 or WebM video.';
 }
 
-export function validateBoardText(title: string, body: string, hasMedia = false): string | null {
+export function validateBoardText(
+  title: string,
+  body: string,
+  hasMedia = false,
+  hasMeetingLink = false,
+): string | null {
   if (!title.trim()) return 'Post title is required.';
   if (title.trim().length > 120) return 'Post title must be 120 characters or fewer.';
   if (body.length > 5000) return 'Post text must be 5,000 characters or fewer.';
-  if (!body.trim() && !hasMedia) return 'Write a message or attach an image or video.';
+  if (!body.trim() && !hasMedia && !hasMeetingLink) {
+    return 'Write a message or attach an image or video.';
+  }
   return null;
 }
 
@@ -111,10 +140,18 @@ export async function createBoardPost(input: {
   authorName: string;
   title: string;
   body: string;
+  meetUrl?: string;
   media?: File | null;
   onProgress?: (progress: number) => void;
 }): Promise<void> {
-  const textError = validateBoardText(input.title, input.body, !!input.media);
+  const meetUrlError = validateGoogleMeetUrl(input.meetUrl ?? '');
+  if (meetUrlError) throw new Error(meetUrlError);
+  const textError = validateBoardText(
+    input.title,
+    input.body,
+    !!input.media,
+    !!input.meetUrl?.trim(),
+  );
   if (textError) throw new Error(textError);
   if (input.media) {
     const mediaError = validateBoardMedia(input.media);
@@ -154,6 +191,7 @@ export async function createBoardPost(input: {
       mediaPath,
       mediaType,
       mediaName: input.media?.name ?? null,
+      meetUrl: input.meetUrl?.trim() || null,
     });
   } catch (error) {
     if (mediaPath && mediaUploaded) {

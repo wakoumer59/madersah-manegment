@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { MessageSquareText } from 'lucide-react';
+import { MessageSquareText, Video } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { EmptyState } from '@/components/common/EmptyState';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
@@ -100,6 +100,17 @@ export default function StudentBoardPage() {
                   <p className="mt-4 whitespace-pre-wrap break-words text-[15px] leading-7 text-slate-700">
                     {post.body}
                   </p>
+                )}
+                {post.meetUrl && (
+                  <a
+                    href={post.meetUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700"
+                  >
+                    <Video className="h-4 w-4" aria-hidden="true" />
+                    {translate('Join live meeting')}
+                  </a>
                 )}
               </div>
               <BoardPostMedia post={post} />

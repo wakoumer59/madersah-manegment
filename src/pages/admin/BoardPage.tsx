@@ -14,12 +14,13 @@ import {
   listBoardPosts,
   validateBoardMedia,
   validateBoardText,
+  validateGoogleMeetUrl,
   validateShortVideo,
 } from '@/services/boardService';
 import type { BoardPost } from '@/types';
 import { errorMessage } from '@/utils/errors';
 
-const EMPTY_FORM = { title: '', body: '' };
+const EMPTY_FORM = { title: '', body: '', meetUrl: '' };
 
 function MediaPreview({ post }: { post: BoardPost }) {
   if (!post.mediaUrl) return null;
@@ -104,7 +105,17 @@ export default function BoardPage() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const validationError = validateBoardText(form.title, form.body, !!media);
+    const meetUrlError = validateGoogleMeetUrl(form.meetUrl);
+    if (meetUrlError) {
+      setFormError(meetUrlError);
+      return;
+    }
+    const validationError = validateBoardText(
+      form.title,
+      form.body,
+      !!media,
+      !!form.meetUrl.trim(),
+    );
     if (validationError) {
       setFormError(validationError);
       return;
@@ -124,6 +135,7 @@ export default function BoardPage() {
         authorName: userRecord.displayName,
         title: form.title,
         body: form.body,
+        meetUrl: form.meetUrl,
         media,
         onProgress: setUploadProgress,
       });
@@ -204,6 +216,19 @@ export default function BoardPage() {
               <p className="whitespace-pre-wrap break-words px-4 pb-4 text-sm leading-6 text-slate-700 sm:px-5">
                 {post.body}
               </p>
+              {post.meetUrl && (
+                <div className="px-4 pb-4 sm:px-5">
+                  <a
+                    href={post.meetUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700"
+                  >
+                    <Video className="h-4 w-4" aria-hidden="true" />
+                    {translate('Join live meeting')}
+                  </a>
+                </div>
+              )}
               <MediaPreview post={post} />
             </article>
           ))}
@@ -245,9 +270,23 @@ export default function BoardPage() {
             />
           </label>
           <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
+            {translate('Google Meet link (optional)')}
+            <input
+              type="url"
+              inputMode="url"
+              value={form.meetUrl}
+              onChange={(event) => setForm((current) => ({ ...current, meetUrl: event.target.value }))}
+              placeholder="https://meet.google.com/abc-defg-hij"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base font-normal text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/30"
+            />
+            <span className="text-xs font-normal text-slate-500">
+              {translate('Students can use this button to join your live meeting.')}
+            </span>
+          </label>
+          <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
             {translate('Message')}
             <textarea
-              required={!media}
+              required={!media && !form.meetUrl.trim()}
               rows={5}
               maxLength={5000}
               value={form.body}

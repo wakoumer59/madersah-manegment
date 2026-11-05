@@ -170,6 +170,7 @@ export interface BoardPost {
   mediaPath: string | null;
   mediaType: 'image' | 'video' | null;
   mediaName: string | null;
+  meetUrl: string | null;
 }
 
 export interface QaidaLesson {
