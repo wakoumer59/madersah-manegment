@@ -6,6 +6,7 @@ import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { Select } from '@/components/common/Select';
 import { translate } from '@/i18n';
 import {
+  groupAyahsByMushafPage,
   getQuranSurah,
   listQuranReciters,
   listQuranSurahs,
@@ -24,6 +25,7 @@ export default function QuranReaderPage() {
   const [selectedSurah, setSelectedSurah] = useState('');
   const [selectedReciter, setSelectedReciter] = useState('');
   const [ayahs, setAyahs] = useState<QuranAyah[]>([]);
+  const [textSource, setTextSource] = useState<'quran-foundation' | 'alquran-cloud' | null>(null);
   const [selectedAyahIndex, setSelectedAyahIndex] = useState(0);
   const [loadingCatalog, setLoadingCatalog] = useState(true);
   const [catalogAttempt, setCatalogAttempt] = useState(0);
@@ -63,13 +65,17 @@ export default function QuranReaderPage() {
     if (!surah || !reciter) return;
     setLoadingSurah(true);
     setAyahs([]);
+    setTextSource(null);
     setSelectedAyahIndex(0);
     setAudioError(false);
     setIsPlaying(false);
     setError(null);
     try {
       const verses = await getQuranSurah(Number(surah), reciter, signal);
-      if (!signal.aborted) setAyahs(verses);
+      if (!signal.aborted) {
+        setAyahs(verses.ayahs);
+        setTextSource(verses.textSource);
+      }
     } catch (loadError) {
       if (!signal.aborted) setError(errorMessage(loadError));
     } finally {
@@ -103,6 +109,7 @@ export default function QuranReaderPage() {
   const surah = surahs.find((item) => String(item.number) === selectedSurah);
   const reciter = reciters.find((item) => item.identifier === selectedReciter);
   const selectedAyah = ayahs[selectedAyahIndex];
+  const mushafPages = groupAyahsByMushafPage(ayahs);
 
   const handleEnded = () => {
     if (selectedAyahIndex >= ayahs.length - 1) {
@@ -173,17 +180,24 @@ export default function QuranReaderPage() {
           {translate('Read the Quran and listen to reciters verse by verse.')}
         </p>
         <p className="mt-2 text-xs text-slate-500">
-          {translate('Quran text and streamed audio are provided by AlQuran Cloud. Audio streams online and is not downloaded.')}
+          {textSource === 'alquran-cloud'
+            ? translate('Quran text and streamed audio are provided by AlQuran Cloud. Audio streams online and is not downloaded.')
+            : translate('Madinah Mushaf text and page divisions are provided by Quran Foundation. Recitation audio streams from AlQuran Cloud.')}
           {' '}
           <a
-            href="https://alquran.cloud"
+            href="https://api-docs.quran.foundation/"
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             className="font-medium text-emerald-700 underline"
           >
             {translate('Source')}
           </a>
         </p>
+        {textSource === 'alquran-cloud' && (
+          <p role="status" className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950">
+            {translate('Madinah Mushaf pages are not connected yet. Showing the available Quran text until Quran Foundation credentials are configured.')}
+          </p>
+        )}
         <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950">
           {translate('The amber highlight marks the active ayah. This reciter audio does not provide word or letter timing.')}
         </p>
@@ -273,70 +287,91 @@ export default function QuranReaderPage() {
               {translate('Loading surah…')}
             </div>
           ) : (
-            <section aria-label={translate('Ayahs')} className="mx-auto max-w-3xl pb-28">
-              <div className="rounded-[1.75rem] border-4 border-double border-amber-300 bg-[#fffdf5] p-5 shadow-[0_12px_36px_rgba(120,83,31,0.12)] sm:p-9">
-                <div className="mb-6 flex items-center justify-center gap-3 text-amber-800" aria-hidden="true">
-                  <span className="h-px flex-1 bg-amber-300" />
-                  <span className="text-sm">۞</span>
-                  <span className="h-px flex-1 bg-amber-300" />
-                </div>
-                <h3 className="text-center text-xl font-semibold text-emerald-950 sm:text-2xl">
-                  {surah?.name}
-                </h3>
-                {surah && surah.number !== 1 && surah.number !== 9 && (
-                  <p
-                    lang="ar"
-                    dir="rtl"
-                    className="my-7 text-center text-3xl leading-relaxed text-slate-900 sm:text-4xl"
-                    style={{ fontFamily: '"Noto Naskh Arabic", "Amiri", serif' }}
-                  >
-                    بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
-                  </p>
-                )}
-                <div
+            <section aria-label={translate('Madinah Mushaf pages')} className="mx-auto max-w-3xl space-y-5 pb-28">
+              {mushafPages.map((page, pageIndex) => (
+                <article
+                  key={`${page.pageNumber ?? selectedSurah}-${page.startIndex}`}
+                  aria-label={page.pageNumber
+                    ? translate('Mushaf page {number}', { number: page.pageNumber })
+                    : translate('Mushaf page')}
                   lang="ar"
                   dir="rtl"
-                  className="text-center text-[2rem] leading-[2.35] text-slate-900 sm:text-[2.5rem] sm:leading-[2.4]"
-                  style={{ fontFamily: '"Noto Naskh Arabic", "Amiri", serif' }}
+                  translate="no"
+                  className="rounded-[1.75rem] border-[5px] border-double border-amber-300 bg-[#fffdf5] px-4 py-6 shadow-[0_12px_36px_rgba(120,83,31,0.12)] sm:min-h-[65vh] sm:px-9 sm:py-8"
                 >
-                  {ayahs.map((ayah, index) => (
-                    <button
-                      type="button"
-                      key={`${selectedSurah}-${ayah.numberInSurah}`}
-                      ref={(element) => {
-                        ayahRefs.current[index] = element;
-                      }}
-                      aria-label={translate('Ayah {number}', { number: ayah.numberInSurah })}
-                      aria-current={index === selectedAyahIndex ? 'true' : undefined}
-                      onClick={() => selectAyah(index)}
-                      className={`mx-0.5 inline rounded-lg px-1 align-baseline transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-600 ${
-                        index === selectedAyahIndex && isPlaying
-                          ? 'bg-amber-200 text-amber-950 shadow-sm ring-1 ring-amber-400'
-                          : index === selectedAyahIndex
-                            ? 'bg-emerald-100 text-emerald-950'
-                            : 'hover:bg-amber-50'
-                      }`}
-                    >
-                      {ayah.text}
-                      <span
-                        aria-hidden="true"
-                        className={`mx-1 inline-flex h-7 min-w-7 items-center justify-center rounded-full border align-middle font-sans text-xs leading-none ${
-                          index === selectedAyahIndex && isPlaying
-                            ? 'border-amber-500 bg-amber-50 text-amber-900'
-                            : 'border-amber-300 bg-white text-amber-800'
-                        }`}
-                      >
-                        {ayah.numberInSurah.toLocaleString('ar')}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-                <div className="mt-6 flex items-center justify-center gap-3 text-amber-800" aria-hidden="true">
-                  <span className="h-px flex-1 bg-amber-300" />
-                  <span className="text-sm">۞</span>
-                  <span className="h-px flex-1 bg-amber-300" />
-                </div>
-              </div>
+                  <div className="mb-6 flex items-center justify-center gap-3 text-amber-800" aria-hidden="true">
+                    <span className="h-px flex-1 bg-amber-300" />
+                    <span className="text-sm">۞</span>
+                    <span className="h-px flex-1 bg-amber-300" />
+                  </div>
+                  {pageIndex === 0 && (
+                    <>
+                      <h3 className="text-center text-xl font-semibold text-emerald-950 sm:text-2xl">
+                        {surah?.name}
+                      </h3>
+                      {surah && surah.number !== 1 && surah.number !== 9 && (
+                        <p
+                          className="my-7 text-center text-3xl leading-relaxed text-slate-900 sm:text-4xl"
+                          style={{ fontFamily: '"Noto Naskh Arabic", "Amiri", serif' }}
+                        >
+                          بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
+                        </p>
+                      )}
+                    </>
+                  )}
+                  <div
+                    className="text-center text-[2rem] leading-[2.35] text-slate-900 sm:text-[2.5rem] sm:leading-[2.4]"
+                    style={{ fontFamily: '"Noto Naskh Arabic", "Amiri", serif' }}
+                  >
+                    {page.ayahs.map((ayah, pageAyahIndex) => {
+                      const index = page.startIndex + pageAyahIndex;
+                      return (
+                        <button
+                          type="button"
+                          key={`${selectedSurah}-${ayah.numberInSurah}`}
+                          ref={(element) => {
+                            ayahRefs.current[index] = element;
+                          }}
+                          aria-label={translate('Ayah {number}', { number: ayah.numberInSurah })}
+                          aria-current={index === selectedAyahIndex ? 'true' : undefined}
+                          onClick={() => selectAyah(index)}
+                          className={`mx-0.5 inline rounded-lg px-1 align-baseline transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-600 ${
+                            index === selectedAyahIndex && isPlaying
+                              ? 'bg-amber-200 text-amber-950 shadow-sm ring-1 ring-amber-400'
+                              : index === selectedAyahIndex
+                                ? 'bg-emerald-100 text-emerald-950'
+                                : 'hover:bg-amber-50'
+                          }`}
+                        >
+                          {ayah.text}
+                          <span
+                            aria-hidden="true"
+                            className={`mx-1 inline-flex h-7 min-w-7 items-center justify-center rounded-full border align-middle font-sans text-xs leading-none ${
+                              index === selectedAyahIndex && isPlaying
+                                ? 'border-amber-500 bg-amber-50 text-amber-900'
+                                : 'border-amber-300 bg-white text-amber-800'
+                            }`}
+                          >
+                            {ayah.numberInSurah.toLocaleString('ar')}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-6 flex items-center justify-center gap-3 text-amber-800" aria-hidden="true">
+                    <span className="h-px flex-1 bg-amber-300" />
+                    <span className="text-sm">۞</span>
+                    <span className="h-px flex-1 bg-amber-300" />
+                  </div>
+                  <footer className="mt-4 text-center">
+                    <span className="inline-flex rounded-full border border-amber-300 bg-white px-3 py-1 text-xs font-medium text-amber-900">
+                      {page.pageNumber
+                        ? translate('Mushaf page {number}', { number: page.pageNumber })
+                        : translate('Surah text')}
+                    </span>
+                  </footer>
+                </article>
+              ))}
               {!loadingSurah && !ayahs.length && !error && (
                 <p className="py-8 text-center text-sm text-slate-500">
                   {translate('No ayahs are available for this selection.')}

@@ -162,20 +162,23 @@ export default function QaidaReaderPage() {
         </div>
       ) : (
         <div className="mx-auto grid max-w-4xl gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
-          <section className="order-2 min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6 lg:order-2">
+          <section className="order-2 min-w-0 lg:order-2">
             {selectedLesson ? (
               <>
-                <div className="mb-5">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
-                    {translate('Lesson')} {selectedLesson.order}
-                  </p>
-                  <h2 className="mt-1 text-xl font-bold text-slate-900">{selectedLesson.title}</h2>
-                </div>
-                <div className="relative overflow-hidden rounded-[1.75rem] border-4 border-double border-amber-300 bg-[#fffdf5] p-5 shadow-[0_12px_36px_rgba(120,83,31,0.12)] sm:p-8">
+                <div className="relative mx-auto flex min-h-[65vh] max-w-3xl flex-col overflow-hidden rounded-[1.75rem] border-[5px] border-double border-amber-300 bg-[#fffdf5] px-4 py-6 shadow-[0_12px_36px_rgba(120,83,31,0.12)] sm:px-9 sm:py-8">
                   <span className="absolute left-2 top-1 text-xl text-emerald-700" aria-hidden="true">❧</span>
                   <span className="absolute right-2 top-1 text-xl text-emerald-700" aria-hidden="true">❧</span>
                   <span className="absolute bottom-1 left-2 rotate-180 text-xl text-emerald-700" aria-hidden="true">❧</span>
                   <span className="absolute bottom-1 right-2 rotate-180 text-xl text-emerald-700" aria-hidden="true">❧</span>
+                  <header className="mb-5 text-center">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-800">
+                      {translate('Qaida Nuraniya')}
+                    </p>
+                    <h2 className="mt-2 text-xl font-bold text-slate-900">{selectedLesson.title}</h2>
+                    <p className="mt-1 text-xs text-slate-600">
+                      {translate('Lesson')} {selectedLesson.order}
+                    </p>
+                  </header>
                   <div className="mb-5 flex items-center justify-center gap-3 text-amber-800" aria-hidden="true">
                     <span className="h-px flex-1 bg-amber-300" />
                     <span>۞</span>
@@ -184,7 +187,8 @@ export default function QaidaReaderPage() {
                   <div
                     lang="ar"
                     dir="rtl"
-                    className="min-h-48 whitespace-pre-wrap break-words py-2 text-center text-3xl leading-[2.5] text-slate-900 sm:text-4xl"
+                    translate="no"
+                    className="flex-1 whitespace-pre-wrap break-words py-2 text-center text-3xl leading-[2.5] text-slate-900 sm:text-4xl"
                     style={{ fontFamily: '"Noto Naskh Arabic", "Amiri", serif' }}
                   >
                     {wordRanges.map((word, index) => (
@@ -212,6 +216,11 @@ export default function QaidaReaderPage() {
                     <span>۞</span>
                     <span className="h-px flex-1 bg-amber-300" />
                   </div>
+                  <footer className="mt-4 text-center">
+                    <span className="inline-flex rounded-full border border-amber-300 bg-white px-3 py-1 text-xs font-medium text-amber-900">
+                      {translate('Lesson')} {selectedLesson.order}
+                    </span>
+                  </footer>
                 </div>
                 <p className="mt-2 text-center text-xs text-slate-500">
                   {translate('Amber marks the word currently spoken when your device provides word timing.')}

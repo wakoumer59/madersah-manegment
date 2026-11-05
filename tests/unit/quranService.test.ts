@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { parseAyahs, parseReciters, parseSurahs } from '@/services/quranService';
+import {
+  groupAyahsByMushafPage,
+  parseAyahs,
+  parseMushafAyahs,
+  parseReciters,
+  parseSurahs,
+} from '@/services/quranService';
 
 describe('Quran service response parsing', () => {
   it('parses the surah catalog', () => {
@@ -67,7 +73,65 @@ describe('Quran service response parsing', () => {
       numberInSurah: 1,
       text: 'بِسْمِ اللَّهِ',
       audio: 'https://cdn.islamic.network/quran/audio/128/ar.alafasy/1.mp3',
+      mushafPage: null,
     }]);
+  });
+
+  it('uses Quran Foundation Uthmani text and Madinah Mushaf page numbers', () => {
+    const audioAyahs = [
+      {
+        numberInSurah: 1,
+        text: 'fallback text',
+        audio: 'https://cdn.islamic.network/quran/audio/128/ar.alafasy/1.mp3',
+        mushafPage: null,
+      },
+      {
+        numberInSurah: 2,
+        text: 'fallback text',
+        audio: 'https://cdn.islamic.network/quran/audio/128/ar.alafasy/2.mp3',
+        mushafPage: null,
+      },
+    ];
+    expect(parseMushafAyahs({
+      verses: [
+        { verse_key: '1:1', verse_number: 1, text_uthmani: 'بِسْمِ اللَّهِ', page_number: 1 },
+        { verse_key: '1:2', verse_number: 2, text_uthmani: 'الْحَمْدُ لِلَّهِ', page_number: 2 },
+      ],
+    }, audioAyahs, 1)).toEqual([
+      { ...audioAyahs[0], text: 'بِسْمِ اللَّهِ', mushafPage: 1 },
+      { ...audioAyahs[1], text: 'الْحَمْدُ لِلَّهِ', mushafPage: 2 },
+    ]);
+  });
+
+  it('rejects Quran Foundation verses for the wrong surah or invalid page', () => {
+    const audioAyahs = [{
+      numberInSurah: 1,
+      text: 'fallback text',
+      audio: 'https://cdn.islamic.network/quran/audio/128/ar.alafasy/1.mp3',
+      mushafPage: null,
+    }];
+    expect(() => parseMushafAyahs({
+      verses: [{ verse_key: '2:1', verse_number: 1, text_uthmani: 'الفاتحة', page_number: 1 }],
+    }, audioAyahs, 1)).toThrow('The Madinah Mushaf service returned invalid surah content.');
+    expect(() => parseMushafAyahs({
+      verses: [{ verse_key: '1:1', verse_number: 1, text_uthmani: 'الفاتحة', page_number: 605 }],
+    }, audioAyahs, 1)).toThrow('The Madinah Mushaf service returned invalid surah content.');
+  });
+
+  it('groups Quran verses into Madinah Mushaf pages', () => {
+    const pages = groupAyahsByMushafPage([
+      { numberInSurah: 1, text: 'one', audio: '', mushafPage: 1 },
+      { numberInSurah: 2, text: 'two', audio: '', mushafPage: 1 },
+      { numberInSurah: 3, text: 'three', audio: '', mushafPage: 2 },
+    ]);
+    expect(pages.map((page) => ({
+      pageNumber: page.pageNumber,
+      startIndex: page.startIndex,
+      ayahCount: page.ayahs.length,
+    }))).toEqual([
+      { pageNumber: 1, startIndex: 0, ayahCount: 2 },
+      { pageNumber: 2, startIndex: 2, ayahCount: 1 },
+    ]);
   });
 
   it('rejects malformed or unexpected audio URLs', () => {

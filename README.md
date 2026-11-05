@@ -74,6 +74,23 @@ store its complete JSON key as `FIREBASE_SERVICE_ACCOUNT_JSON`, and set the matc
 URL as `FIREBASE_DATABASE_URL`. Never use a `VITE_` prefix for private credentials or commit
 the service-account key. The build checks that these server variables are configured.
 
+To enable Madinah Mushaf text and page divisions, create a **Backend/server** app in the
+[Quran Foundation Developer Console](https://dev-console.quran.foundation/projects), request
+production Content API access, then add these Vercel server environment variables:
+
+```text
+QF_CLIENT_ID
+QF_CLIENT_SECRET
+QF_ENV=production
+```
+
+The client secret is used only by the server-side `/api/quran` function. Never add it as a
+`VITE_` variable. The pre-live environment (`QF_ENV=prelive`) is for testing and only includes
+Al-Fatihah and Al-Baqarah. Until credentials are configured, the reader keeps using its existing
+Quran text source and displays a notice; recitation audio and reciter selection remain unchanged.
+Qaida uses lesson text supplied by your school in the same Mushaf-inspired page layout; the
+Quran Foundation API does not provide Qaida Nuraniya content.
+
 Institution admins can create teacher and student accounts with a temporary password. The
 user must sign in with that password and choose a different one before accessing institution
 data. For local API development, run the project with Vercel's development runtime so the
