@@ -91,6 +91,15 @@ Quran text source and displays a notice; recitation audio and reciter selection 
 Qaida uses lesson text supplied by your school in the same Mushaf-inspired page layout; the
 Quran Foundation API does not provide Qaida Nuraniya content.
 
+To enable AI System Help, add `OPENAI_API_KEY` as a sensitive, server-only Vercel environment
+variable. Optionally set `OPENAI_MODEL` to a model available to your API account (the default
+is `gpt-4o-mini`), then redeploy. The Help page is role-aware and answers from a fixed guide to
+the features in this LMS. It verifies the signed-in user's Firebase account and does not read
+school records or save chat history. Questions and short conversation context are sent to
+OpenAI to generate answers; tell users not to include passwords or private student information.
+API usage may incur charges on your OpenAI account; configure usage limits with the provider.
+Never expose the API key with a `VITE_` prefix.
+
 Institution admins can create teacher and student accounts with a temporary password. The
 user must sign in with that password and choose a different one before accessing institution
 data. For local API development, run the project with Vercel's development runtime so the

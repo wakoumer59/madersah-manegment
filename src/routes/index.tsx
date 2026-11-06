@@ -38,6 +38,7 @@ const StudentBoardPage = lazy(() => import('@/pages/student/BoardPage'));
 const QaidaLessonsPage = lazy(() => import('@/pages/admin/QaidaLessonsPage'));
 const QaidaReaderPage = lazy(() => import('@/pages/student/QaidaReaderPage'));
 const QuranReaderPage = lazy(() => import('@/pages/student/QuranReaderPage'));
+const HelpChatPage = lazy(() => import('@/pages/HelpChatPage'));
 
 function HomeRedirect() {
   const { authUser, userRecord, loading, configError, accountError } = useAuth();
@@ -56,6 +57,15 @@ export function AppRoutes() {
   return (
     <Suspense fallback={<LoadingSpinner fullPage />}>
       <Routes>
+        <Route
+          path="/help"
+          element={
+            <RequireRole roles={['platformOwner', 'institutionAdmin', 'teacher', 'student']}>
+              <HelpChatPage />
+            </RequireRole>
+          }
+        />
+
         {/* Public */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />

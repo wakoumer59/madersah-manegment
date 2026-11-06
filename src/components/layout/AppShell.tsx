@@ -1,7 +1,8 @@
 import { translate  } from '@/i18n';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
-import { GraduationCap, X } from 'lucide-react';
+import { GraduationCap, MessageCircleQuestion, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import {
   AppSidebar,
   NavSections,
@@ -41,6 +42,18 @@ export function AppShell({ variant, children }: AppShellProps) {
         </main>
       </div>
       <BottomNav variant={variant} itemLimit={variant === 'student' ? 5 : 4} />
+      <Link
+        to="/help"
+        aria-label={translate('Open System Help')}
+        title={translate('System Help')}
+        className={`fixed bottom-[calc(72px+env(safe-area-inset-bottom))] right-4 z-30 flex h-12 w-12 items-center justify-center rounded-full text-white shadow-lg transition-transform hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 md:bottom-5 ${
+          variant === 'student'
+            ? 'bg-indigo-600 focus-visible:outline-indigo-600'
+            : 'bg-orange-600 focus-visible:outline-orange-600'
+        }`}
+      >
+        <MessageCircleQuestion className="h-5 w-5" aria-hidden="true" />
+      </Link>
 
       {/* Mobile slide-over drawer with the full sectioned menu */}
       {menuOpen && (

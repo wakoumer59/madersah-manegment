@@ -12,6 +12,7 @@ import {
   Inbox,
   LayoutDashboard,
   MessageSquareText,
+  MessageCircleQuestion,
   School,
   Settings,
   Users,
@@ -73,7 +74,10 @@ export function getNavSections(): Record<ShellVariant, NavSection[]> {
     },
     {
       title: translate('System'),
-      items: [{ label: strings.nav.settings, to: '/admin/settings', icon: Settings, soon: true }],
+      items: [
+        { label: translate('System Help'), to: '/help', icon: MessageCircleQuestion },
+        { label: strings.nav.settings, to: '/admin/settings', icon: Settings, soon: true },
+      ],
     },
   ],
   student: [
@@ -92,7 +96,10 @@ export function getNavSections(): Record<ShellVariant, NavSection[]> {
     },
     {
       title: translate('Account'),
-      items: [{ label: strings.nav.account, to: '/student/account', icon: UserRound, soon: true }],
+      items: [
+        { label: translate('System Help'), to: '/help', icon: MessageCircleQuestion },
+        { label: strings.nav.account, to: '/student/account', icon: UserRound, soon: true },
+      ],
     },
   ],
   owner: [
@@ -100,6 +107,7 @@ export function getNavSections(): Record<ShellVariant, NavSection[]> {
     {
       title: translate("Platform"),
       items: [
+        { label: translate('System Help'), to: '/help', icon: MessageCircleQuestion },
         { label: translate('Institution Requests'), to: '/owner/requests', icon: Inbox },
         { label: translate('Institutions'), to: '/owner/institutions', icon: Building2 },
       ],
