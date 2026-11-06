@@ -335,7 +335,7 @@ export default function QuranReaderPage() {
                           aria-label={translate('Ayah {number}', { number: ayah.numberInSurah })}
                           aria-current={index === selectedAyahIndex ? 'true' : undefined}
                           onClick={() => selectAyah(index)}
-                          className={`mx-0.5 inline rounded-lg px-1 align-baseline transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-600 ${
+                          className={`mx-0.5 inline whitespace-normal rounded-lg px-1 align-baseline transition-colors [unicode-bidi:isolate] focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-600 ${
                             index === selectedAyahIndex && isPlaying
                               ? 'bg-amber-200 text-amber-950 shadow-sm ring-1 ring-amber-400'
                               : index === selectedAyahIndex

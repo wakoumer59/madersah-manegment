@@ -5,9 +5,44 @@ import {
   parseMushafAyahs,
   parseReciters,
   parseSurahs,
+  removeOpeningBasmalah,
 } from '@/services/quranService';
 
 describe('Quran service response parsing', () => {
+  it('removes a duplicated opening basmalah when it is also rendered separately', () => {
+    const ayahs = [
+      {
+        numberInSurah: 1,
+        text: 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ الم',
+        audio: '',
+        mushafPage: 1,
+      },
+      {
+        numberInSurah: 2,
+        text: 'ذَٰلِكَ الْكِتَابُ',
+        audio: '',
+        mushafPage: 1,
+      },
+    ];
+
+    expect(removeOpeningBasmalah(ayahs, 2)).toEqual([
+      { ...ayahs[0], text: 'الم' },
+      ayahs[1],
+    ]);
+  });
+
+  it('preserves Al-Fatiha and leaves surah 9 unchanged', () => {
+    const ayahs = [{
+      numberInSurah: 1,
+      text: 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
+      audio: '',
+      mushafPage: 1,
+    }];
+
+    expect(removeOpeningBasmalah(ayahs, 1)).toBe(ayahs);
+    expect(removeOpeningBasmalah(ayahs, 9)).toBe(ayahs);
+  });
+
   it('parses the surah catalog', () => {
     expect(
       parseSurahs({

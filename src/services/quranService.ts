@@ -34,6 +34,31 @@ export interface QuranMushafPage {
   ayahs: QuranAyah[];
 }
 
+const OPENING_BASMALAH = ['بسم', 'الله', 'الرحمن', 'الرحيم'];
+
+function normalizeArabicWord(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0640\u064B-\u065F\u0670\u06D6-\u06ED]/gu, '')
+    .replace(/[أإآٱ]/gu, 'ا');
+}
+
+export function removeOpeningBasmalah(ayahs: QuranAyah[], surahNumber: number): QuranAyah[] {
+  if (surahNumber === 1 || surahNumber === 9 || !ayahs.length) return ayahs;
+
+  const words = [...ayahs[0].text.matchAll(/\S+/gu)].slice(0, OPENING_BASMALAH.length);
+  if (
+    words.length !== OPENING_BASMALAH.length ||
+    words.some(([word], index) => normalizeArabicWord(word) !== OPENING_BASMALAH[index])
+  ) {
+    return ayahs;
+  }
+
+  const lastWord = words[words.length - 1];
+  const remainder = ayahs[0].text.slice((lastWord.index ?? 0) + lastWord[0].length).trimStart();
+  return [{ ...ayahs[0], text: remainder }, ...ayahs.slice(1)];
+}
+
 interface ArabicAudioEdition extends Record<string, unknown> {
   identifier: string;
   language: 'ar';
@@ -258,7 +283,7 @@ export async function getQuranSurah(
 
   if (mushafResponse.status === 503) {
     return {
-      ayahs: audioAyahs,
+      ayahs: removeOpeningBasmalah(audioAyahs, surahNumber),
       textSource: 'alquran-cloud',
     };
   }
@@ -272,7 +297,10 @@ export async function getQuranSurah(
     throw new Error('The Madinah Mushaf service returned an invalid response.');
   }
   return {
-    ayahs: parseMushafAyahs(mushafPayload, audioAyahs, surahNumber),
+    ayahs: removeOpeningBasmalah(
+      parseMushafAyahs(mushafPayload, audioAyahs, surahNumber),
+      surahNumber,
+    ),
     textSource: 'quran-foundation',
   };
 }
