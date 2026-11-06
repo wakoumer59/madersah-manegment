@@ -43,13 +43,16 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown server error.';
     const missingConfiguration = message.includes('credentials are not configured');
+    const rejectedCredentials = message.includes('authentication failed with status 401');
     if (!missingConfiguration) console.error('Quran Foundation request failed:', message);
     return respond(
       res,
-      missingConfiguration ? 503 : 502,
+      missingConfiguration || rejectedCredentials ? 503 : 502,
       {
         error: missingConfiguration
           ? 'Quran Foundation API credentials are not configured.'
+          : rejectedCredentials
+            ? 'Quran Foundation rejected the configured credentials. Check the client ID, secret, and API environment.'
           : 'Quran content is temporarily unavailable.',
       },
     );

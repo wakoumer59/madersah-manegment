@@ -195,7 +195,7 @@ export default function QuranReaderPage() {
         </p>
         {textSource === 'alquran-cloud' && (
           <p role="status" className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950">
-            {translate('Madinah Mushaf pages are not connected yet. Showing the available Quran text until Quran Foundation credentials are configured.')}
+            {translate('Madinah Mushaf text is unavailable. Showing the available Quran text instead. Check the Quran Foundation settings if this continues.')}
           </p>
         )}
         <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950">

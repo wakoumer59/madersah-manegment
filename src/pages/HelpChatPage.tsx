@@ -1,18 +1,11 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { Bot, CircleHelp, Send, Sparkles, UserRound } from 'lucide-react';
+import { Bot, CircleHelp, MessageSquareText, Send, UserRound } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { Button } from '@/components/common/Button';
 import { useAuth } from '@/contexts/AuthContext';
 import { translate } from '@/i18n';
 import { askSystemHelp } from '@/services/helpChatService';
 import type { HelpChatMessage } from '../../server/helpChat';
-
-const SUGGESTED_QUESTIONS = [
-  'How do I add students and assign them to a class?',
-  'How can students join a Google Meet lesson?',
-  'How do I create and publish an online test?',
-  'How do I add Qaida lessons for students?',
-];
 
 export default function HelpChatPage() {
   const { authUser, userRecord } = useAuth();
@@ -32,9 +25,9 @@ export default function HelpChatPage() {
     });
   }, [messages, sending]);
 
-  const sendMessage = async (event?: FormEvent<HTMLFormElement>, suggested?: string) => {
+  const sendMessage = async (event?: FormEvent<HTMLFormElement>) => {
     event?.preventDefault();
-    const question = (suggested ?? draft).trim();
+    const question = draft.trim();
     if (!question || sending || !authUser) return;
 
     const updatedMessages = [...messages, { role: 'user' as const, content: question }];
@@ -64,7 +57,7 @@ export default function HelpChatPage() {
             {translate('System Help')}
           </h1>
           <p className="mt-1 text-sm text-slate-600">
-            {translate('Ask how to use Medresa LMS. The assistant gives step-by-step guidance for your account role.')}
+            {translate('Guidance for using the tools and features available in your account.')}
           </p>
         </header>
 
@@ -75,29 +68,16 @@ export default function HelpChatPage() {
           className="flex-1 space-y-4 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"
         >
           {messages.length === 0 ? (
-            <div className="mx-auto max-w-xl py-6 text-center">
-              <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-indigo-50 text-indigo-700">
-                <Sparkles className="h-6 w-6" aria-hidden="true" />
+            <div className="flex h-full min-h-64 flex-col items-center justify-center px-4 py-10 text-center">
+              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-50 text-indigo-700">
+                <MessageSquareText className="h-6 w-6" aria-hidden="true" />
               </span>
-              <h2 className="mt-3 text-lg font-semibold text-slate-900">
-                {translate('How can I help you?')}
+              <h2 className="mt-4 text-lg font-semibold text-slate-900">
+                {translate('Start a conversation')}
               </h2>
-              <p className="mt-1 text-sm text-slate-600">
-                {translate('Ask about classes, students, online tests, materials, live meetings, Quran, or Qaida.')}
+              <p className="mt-1 max-w-md text-sm text-slate-600">
+                {translate('Send a message to get guidance on using the platform.')}
               </p>
-              <div className="mt-5 grid gap-2 text-left sm:grid-cols-2">
-                {SUGGESTED_QUESTIONS.map((question) => (
-                  <button
-                    key={question}
-                    type="button"
-                    disabled={sending}
-                    onClick={() => void sendMessage(undefined, question)}
-                    className="min-h-12 rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 transition-colors hover:border-indigo-300 hover:bg-indigo-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:opacity-50"
-                  >
-                    {translate(question)}
-                  </button>
-                ))}
-              </div>
             </div>
           ) : (
             messages.map((message, index) => (
