@@ -1,8 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildHelpChatSystemPrompt,
+  getHelpChatProviderErrorCode,
   parseHelpChatMessages,
 } from '../../server/helpChat';
+
+describe('getHelpChatProviderErrorCode', () => {
+  it('extracts provider error codes without exposing provider messages', () => {
+    expect(getHelpChatProviderErrorCode({
+      error: { code: 'insufficient_quota', message: 'private provider detail' },
+    })).toBe('insufficient_quota');
+    expect(getHelpChatProviderErrorCode({
+      error: { type: 'rate_limit_exceeded' },
+    })).toBe('rate_limit_exceeded');
+    expect(getHelpChatProviderErrorCode({ error: 'invalid' })).toBeNull();
+    expect(getHelpChatProviderErrorCode(null)).toBeNull();
+  });
+});
 
 describe('parseHelpChatMessages', () => {
   it('trims valid alternating turns and requires a user message last', () => {

@@ -1,6 +1,27 @@
 export type HelpChatRole = 'platformOwner' | 'institutionAdmin' | 'teacher' | 'student';
 export type HelpChatMessage = { role: 'user' | 'assistant'; content: string };
 
+export function getHelpChatProviderErrorCode(payload: unknown): string | null {
+  if (
+    !payload ||
+    typeof payload !== 'object' ||
+    !('error' in payload) ||
+    !payload.error ||
+    typeof payload.error !== 'object'
+  ) {
+    return null;
+  }
+
+  const providerError = payload.error;
+  if ('code' in providerError && typeof providerError.code === 'string') {
+    return providerError.code;
+  }
+  if ('type' in providerError && typeof providerError.type === 'string') {
+    return providerError.type;
+  }
+  return null;
+}
+
 const MAX_MESSAGES = 8;
 const MAX_MESSAGE_LENGTH = 1500;
 const MAX_TOTAL_LENGTH = 8000;

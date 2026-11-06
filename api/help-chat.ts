@@ -2,6 +2,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { getAdminServices } from '../server/firebaseAdmin.js';
 import {
   buildHelpChatSystemPrompt,
+  getHelpChatProviderErrorCode,
   parseHelpChatMessages,
   type HelpChatRole,
 } from '../server/helpChat.js';
@@ -38,6 +39,14 @@ function isHelpChatRole(role: unknown): role is HelpChatRole {
     || role === 'institutionAdmin'
     || role === 'teacher'
     || role === 'student';
+}
+
+async function getProviderErrorCode(response: Response): Promise<string | null> {
+  try {
+    return getHelpChatProviderErrorCode(await response.json() as unknown);
+  } catch {
+    return null;
+  }
 }
 
 export default async function handler(req: ApiRequest, res: ServerResponse) {
@@ -151,7 +160,25 @@ export default async function handler(req: ApiRequest, res: ServerResponse) {
   }
 
   if (!response.ok) {
-    console.error(`System Help AI provider returned status ${response.status}.`);
+    const providerCode = await getProviderErrorCode(response);
+    console.error(
+      `System Help AI provider returned status ${response.status}${providerCode ? ` (${providerCode})` : ''}.`,
+    );
+    if (response.status === 429 && providerCode === 'insufficient_quota') {
+      return respond(res, 503, {
+        error: 'AI provider quota is unavailable. Check OpenAI API billing and project usage limits, then try again.',
+      });
+    }
+    if (response.status === 429) {
+      return respond(res, 429, {
+        error: 'AI service is temporarily rate limited. Wait a minute and try again.',
+      });
+    }
+    if (response.status === 401) {
+      return respond(res, 503, {
+        error: 'OpenAI rejected the configured API key. Check that the Vercel production key is active and correct.',
+      });
+    }
     return respond(res, 502, { error: 'System Help could not answer right now. Please try again.' });
   }
 
